@@ -1,4 +1,17 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC8mDTC6D0yqmXdo7VQVyx7DnrIjwGg-6I",
+  authDomain: "mps-poker-bec02.firebaseapp.com",
+  projectId: "mps-poker-bec02",
+  storageBucket: "mps-poker-bec02.firebasestorage.app",
+  messagingSenderId: "719392847742",
+  appId: "1:719392847742:web:086a74b5b6f0394ccee52f"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 const BUY_IN=1000,TAX=0.2;
 const NAMES=["IO","PN","CW","BT","AK","DS","PK","SC","YS","SY","DT","JN","KC"];
 const MON=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
@@ -201,6 +214,14 @@ export default function App(){
   const[showAll,setShowAll]=useState(false);
   const[history,setHistory]=useState([]);
   const[showHist,setShowHist]=useState(false);
+  const[saving,setSaving]=useState(false);
+
+  useEffect(()=>{
+    getDocs(collection(db,"sessions")).then(snap=>{
+      const data=snap.docs.map(d=>d.data()).sort((a,b)=>a.date.localeCompare(b.date));
+      setHistory(data);
+    }).catch(()=>{});
+  },[]);
   const[showSum,setShowSum]=useState(false);
   const[extras,setExtras]=useState([]);
   const[newLabel,setNewLabel]=useState("");
@@ -230,8 +251,16 @@ export default function App(){
   const curK=prevK+totTax-totEx-rebate;
   const stl=useMemo(()=>mkSettle(comp,topL?.name,rebate),[comp,topL,rebate]);
 
-  const save=()=>{
-    setHistory(h=>[...h.filter(x=>x.date!==date),{date,kittyEnd:curK,players:comp.map(p=>({name:p.name,rebuys:p.rebuys,finalChips:p.chips,winnings:p.winnings,tax:p.tax,net:p.net})),settlement:stl,extras:extras.map(e=>({...e})),totTax,rebate,prevKitty:prevK}].sort((a,b)=>a.date.localeCompare(b.date)));
+  const save=async()=>{
+    setSaving(true);
+    const entry={date,kittyEnd:curK,players:comp.map(p=>({name:p.name,rebuys:p.rebuys,finalChips:p.chips,winnings:p.winnings,tax:p.tax,net:p.net})),settlement:stl,extras:extras.map(e=>({...e})),totTax,rebate,prevKitty:prevK};
+    try{
+      await setDoc(doc(db,"sessions",date),entry);
+      const updated=[...history.filter(x=>x.date!==date),entry].sort((a,b)=>a.date.localeCompare(b.date));
+      setHistory(updated);
+      try{localStorage.setItem("mps_history",JSON.stringify(updated));}catch{}
+    }catch(e){alert("Save failed: "+e.message);}
+    setSaving(false);
     setShowSum(true);
   };
   const newSess=()=>{setPlayers(ps=>ps.filter(p=>NAMES.includes(p.name)).map(p=>({...p,inSession:false,rebuys:0,finalChips:""})));setExtras([]);setConfirmNew(false);setShowSum(false);const t=new Date();t.setDate(t.getDate()+1);setDate(t.toISOString().split("T")[0]);setShowAll(false);};
@@ -328,7 +357,7 @@ export default function App(){
       </div>
 
       <div style={{display:"flex",gap:8,marginBottom:24}}>
-        <button onClick={save} style={{flex:1,fontSize:15,fontWeight:700,padding:13,borderRadius:12,border:"none",background:"#1a7a3e",color:"#fff",cursor:"pointer"}}>💾 Save + Summary</button>
+        <button onClick={save} disabled={saving} style={{flex:1,fontSize:15,fontWeight:700,padding:13,borderRadius:12,border:"none",background:saving?"#666":"#1a7a3e",color:"#fff",cursor:"pointer"}}>{saving?"Saving...":"💾 Save + Summary"}</button>
         {confirmNew
           ?<div style={{display:"flex",gap:6}}>
             <button onClick={newSess} style={{fontSize:14,fontWeight:700,padding:"13px 12px",borderRadius:12,border:"none",background:"#dc2626",color:"#fff",cursor:"pointer"}}>Confirm</button>
