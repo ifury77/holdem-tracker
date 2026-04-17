@@ -1,5 +1,5 @@
 {
-  "name": "holdem-tracker",
+  "name": "MPS",
   "scripts": { "dev": "vite", "build": "vite build" },
   "dependencies": {
     "react": "^18.0.0",
