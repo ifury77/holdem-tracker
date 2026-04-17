@@ -14,7 +14,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 const BUY_IN=1000,TAX=0.2;
-const NAMES=["IO","PN","CW","BT","AK","DS","PK","SC","YS","SY","DT","JN","KC"];
+const NAMES=["IO","PN","CW","BT","AK","DS","PK","SC","YS","SY","DT","JN","KC","JW","DH","FC"];
 const MON=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
 const f=n=>Math.round(n).toLocaleString();
 const lbl=iso=>{if(!iso)return"";const[y,m,d]=iso.split("-");return d+MON[+m-1]+y.slice(2);};
