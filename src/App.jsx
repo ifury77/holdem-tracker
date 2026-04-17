@@ -264,7 +264,7 @@ export default function App(){
 
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12,background:"#1a1a2e",borderRadius:14,padding:"10px 14px"}}>
         <span style={{fontSize:22}}>♠</span>
-        <div style={{flex:1}}><div style={{fontSize:15,fontWeight:700,color:"#fff"}}>Hold'em Tracker</div><Cal date={date} setDate={setDate}/></div>
+        <div style={{flex:1}}><div style={{fontSize:15,fontWeight:700,color:"#fff"}}>RiverRat MPS</div><Cal date={date} setDate={setDate}/></div>
         <div style={{textAlign:"center"}}><div style={{fontSize:10,color:"#94a3b8"}}>playing</div><div style={{fontSize:20,fontWeight:800,color:"#4ade80"}}>{sess.length}</div></div>
         <button onClick={()=>setShowHist(s=>!s)} style={{fontSize:12,padding:"5px 10px",borderRadius:8,border:"none",background:"rgba(255,255,255,.1)",color:"#94a3b8",cursor:"pointer"}}>{showHist?"Hide":"History"}</button>
       </div>
