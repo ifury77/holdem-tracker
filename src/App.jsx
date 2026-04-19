@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc, getDocs, collection } from "firebase/firestore";
+import { getFirestore, doc, setDoc, collection, onSnapshot } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC8mDTC6D0yqmXdo7VQVyx7DnrIjwGg-6I",
@@ -20,10 +20,10 @@ const f=n=>Math.round(n).toLocaleString();
 const lbl=iso=>{if(!iso)return"";const[y,m,d]=iso.split("-");return d+"-"+MON[+m-1]+"-"+y.slice(2);};
 const card={background:"var(--color-background-primary)",border:"0.5px solid var(--color-border-tertiary)",borderRadius:14,padding:12,marginBottom:12};
 
-function mkSettle(comp,topName,rebate){
-  const adj=comp.map(p=>p.name===topName?{...p,net:p.net+rebate}:p);
-  const pay=adj.filter(p=>p.net<0).map(p=>({name:p.name,amt:-p.net})).sort((a,b)=>b.amt-a.amt);
-  const rec=adj.filter(p=>p.net>0).map(p=>({name:p.name,amt:p.net})).sort((a,b)=>b.amt-a.amt);
+// Rebate removed — pure settlement based on net positions
+function mkSettle(comp){
+  const pay=comp.filter(p=>p.net<0).map(p=>({name:p.name,amt:-p.net})).sort((a,b)=>b.amt-a.amt);
+  const rec=comp.filter(p=>p.net>0).map(p=>({name:p.name,amt:p.net})).sort((a,b)=>b.amt-a.amt);
   const tx=[],p=pay.map(x=>({...x})),r=rec.map(x=>({...x}));
   let i=0,j=0;
   while(i<p.length&&j<r.length){
@@ -68,8 +68,6 @@ function Cal({date,setDate}){
 
 function SRow({t,comp}){
   const[done,setDone]=useState(false);
-  const winner=comp.find(p=>p.name===t.to);
-  const tax=winner?.tax||0;
   return(
     <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:10,border:"0.5px solid var(--color-border-tertiary)",opacity:done?.4:1,marginBottom:6,background:done?"var(--color-background-secondary)":"var(--color-background-primary)"}}>
       <div style={{width:32,height:32,borderRadius:"50%",background:"#fde8e8",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#a32d2d",flexShrink:0}}>{t.from}</div>
@@ -77,10 +75,6 @@ function SRow({t,comp}){
       <div style={{textAlign:"right",marginRight:4}}>
         <div style={{fontSize:16,fontWeight:800,color:"#1a7a3e"}}>${f(t.amount)}</div>
       </div>
-      {tax>0&&<div style={{textAlign:"right",background:"#fef9ec",borderRadius:7,padding:"3px 8px",minWidth:60}}>
-        <div style={{fontSize:9,color:"#ba7517",fontWeight:700}}>tax→SY</div>
-        <div style={{fontSize:13,fontWeight:800,color:"#ba7517"}}>${f(tax)}</div>
-      </div>}
       <label style={{display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer",fontSize:10,color:"var(--color-text-secondary)",gap:1}}>
         <input type="checkbox" checked={done} onChange={()=>setDone(d=>!d)} style={{width:17,height:17}}/>done
       </label>
@@ -88,7 +82,7 @@ function SRow({t,comp}){
   );
 }
 
-function Summary({date,comp,stl,totTax,rebate,topL,extras,prevK,curK,onClose}){
+function Summary({date,comp,stl,totTax,extras,prevK,curK,onClose}){
   const pool=comp.reduce((s,p)=>s+p.buyIn,0);
   return(
     <div style={{background:"#0f172a",borderRadius:16,marginBottom:12,border:"1px solid #1e293b",overflow:"hidden"}}>
@@ -103,24 +97,20 @@ function Summary({date,comp,stl,totTax,rebate,topL,extras,prevK,curK,onClose}){
       </div>
       <div style={{padding:"12px 16px"}}>
         <div style={{fontSize:10,fontWeight:700,color:"#475569",letterSpacing:".08em",marginBottom:8}}>RESULTS</div>
-        {[...comp].sort((a,b)=>b.winnings-a.winnings).map(p=>{
-          const isTop=topL?.name===p.name;
-          return(
-            <div key={p.name} style={{display:"flex",alignItems:"center",gap:8,marginBottom:7}}>
-              <div style={{width:32,height:32,borderRadius:"50%",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,
-                background:p.winnings>0?"#14532d":p.winnings<0?isTop?"#450a0a":"#2d1a1a":"#1e293b",
-                color:p.winnings>0?"#4ade80":p.winnings<0?"#f87171":"#64748b"}}>{p.name}</div>
-              <div style={{flex:1}}>
-                <div style={{fontSize:11,color:"#94a3b8"}}>{p.rebuys}x · {f(p.chips)} chips</div>
-                {isTop&&<div style={{fontSize:10,color:"#fca5a5",fontWeight:700}}>TOP LOSER · rebate ${f(rebate)}</div>}
-              </div>
-              <div style={{textAlign:"right"}}>
-                <div style={{fontSize:14,fontWeight:800,color:p.winnings>0?"#4ade80":p.winnings<0?"#f87171":"#64748b"}}>{p.winnings===0?"—":(p.winnings>0?"+$":"−$")+f(Math.abs(p.winnings))}</div>
-                {p.tax>0&&<div style={{fontSize:9,color:"#86efac"}}>tax ${f(p.tax)}</div>}
-              </div>
+        {[...comp].sort((a,b)=>b.winnings-a.winnings).map(p=>(
+          <div key={p.name} style={{display:"flex",alignItems:"center",gap:8,marginBottom:7}}>
+            <div style={{width:32,height:32,borderRadius:"50%",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,
+              background:p.winnings>0?"#14532d":p.winnings<0?"#2d1a1a":"#1e293b",
+              color:p.winnings>0?"#4ade80":p.winnings<0?"#f87171":"#64748b"}}>{p.name}</div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:11,color:"#94a3b8"}}>{p.rebuys}x · {f(p.chips)} chips</div>
             </div>
-          );
-        })}
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:14,fontWeight:800,color:p.winnings>0?"#4ade80":p.winnings<0?"#f87171":"#64748b"}}>{p.winnings===0?"—":(p.winnings>0?"+$":"−$")+f(Math.abs(p.winnings))}</div>
+              {p.tax>0&&<div style={{fontSize:9,color:"#86efac"}}>tax ${f(p.tax)}</div>}
+            </div>
+          </div>
+        ))}
         <div style={{height:1,background:"#1e293b",margin:"10px 0"}}/>
         <div style={{fontSize:10,fontWeight:700,color:"#475569",letterSpacing:".08em",marginBottom:8}}>SETTLEMENT</div>
         {stl.map((t,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
@@ -133,7 +123,6 @@ function Summary({date,comp,stl,totTax,rebate,topL,extras,prevK,curK,onClose}){
         <div style={{fontSize:10,fontWeight:700,color:"#475569",letterSpacing:".08em",marginBottom:8}}>KITTY</div>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:13,color:"#64748b"}}>Tax</span><span style={{fontSize:13,fontWeight:600,color:"#4ade80"}}>+${f(totTax)}</span></div>
         {extras.map((e,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:13,color:"#64748b"}}>{e.label}</span><span style={{fontSize:13,fontWeight:600,color:"#f87171"}}>-${f(e.amount)}</span></div>)}
-        {rebate>0&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:13,color:"#64748b"}}>Rebate ({topL?.name})</span><span style={{fontSize:13,fontWeight:600,color:"#f87171"}}>-${f(rebate)}</span></div>}
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:13,color:"#64748b"}}>Previous</span><span style={{fontSize:13,color:"#94a3b8",fontWeight:600}}>${f(prevK)}</span></div>
         <div style={{background:"#0d2818",borderRadius:10,padding:"10px 14px",marginTop:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <span style={{fontSize:13,color:"#4ade80",fontWeight:600}}>Current Kitty</span>
@@ -207,11 +196,17 @@ export default function App(){
   const[saving,setSaving]=useState(false);
   const[loading,setLoading]=useState(true);
 
+  // Real-time listener — all devices see updates instantly
   useEffect(()=>{
-    getDocs(collection(db,"sessions")).then(snap=>{
+    const unsub=onSnapshot(collection(db,"sessions"),(snap)=>{
       const data=snap.docs.map(d=>d.data()).sort((a,b)=>a.date.localeCompare(b.date));
       setHistory(data);
-    }).catch(()=>{}).finally(()=>setLoading(false));
+      setLoading(false);
+    },(err)=>{
+      console.error("Firestore error:",err);
+      setLoading(false);
+    });
+    return()=>unsub();
   },[]);
 
   const prevK=useMemo(()=>{
@@ -235,18 +230,16 @@ export default function App(){
   const totTax=comp.reduce((s,p)=>s+p.tax,0);
   const tally=sess.length>0&&totW+totL===0;
   const totEx=extras.reduce((s,e)=>s+Number(e.amount||0),0);
-  const topL=comp.length?comp.reduce((a,b)=>a.winnings<b.winnings?a:b):null;
-  const rebate=topL&&topL.winnings<0?Math.round(Math.abs(topL.winnings)*.1):0;
-  const curK=prevK+totTax-totEx-rebate;
-  const stl=useMemo(()=>mkSettle(comp,topL?.name,rebate),[comp,topL,rebate]);
+  const curK=prevK+totTax-totEx;
+
+  // No rebate — pure settlement
+  const stl=useMemo(()=>mkSettle(comp),[comp]);
 
   const save=async()=>{
     setSaving(true);
-    const entry={date,kittyEnd:curK,players:comp.map(p=>({name:p.name,rebuys:p.rebuys,finalChips:p.chips,winnings:p.winnings,tax:p.tax,net:p.net})),settlement:stl,extras:extras.map(e=>({...e})),totTax,rebate,prevKitty:prevK};
+    const entry={date,kittyEnd:curK,players:comp.map(p=>({name:p.name,rebuys:p.rebuys,finalChips:p.chips,winnings:p.winnings,tax:p.tax,net:p.net})),settlement:stl,extras:extras.map(e=>({...e})),totTax,prevKitty:prevK};
     try{
       await setDoc(doc(db,"sessions",date),entry);
-      const updated=[...history.filter(x=>x.date!==date),entry].sort((a,b)=>a.date.localeCompare(b.date));
-      setHistory(updated);
     }catch(e){alert("Save failed: "+e.message);}
     setSaving(false);
     setShowSum(true);
@@ -269,9 +262,9 @@ export default function App(){
         <button onClick={()=>setShowHist(s=>!s)} style={{fontSize:12,padding:"5px 10px",borderRadius:8,border:"none",background:"rgba(255,255,255,.1)",color:"#94a3b8",cursor:"pointer"}}>{showHist?"Hide":"History"}</button>
       </div>
 
-      {loading&&<div style={{textAlign:"center",padding:20,color:"#64748b"}}>Loading history...</div>}
+      {loading&&<div style={{textAlign:"center",padding:20,color:"#64748b"}}>Loading...</div>}
       {showHist&&<Hist history={history} onClose={()=>setShowHist(false)}/>}
-      {showSum&&<Summary date={date} comp={comp} stl={stl} totTax={totTax} rebate={rebate} topL={topL} extras={extras} prevK={prevK} curK={curK} onClose={()=>setShowSum(false)}/>}
+      {showSum&&<Summary date={date} comp={comp} stl={stl} totTax={totTax} extras={extras} prevK={prevK} curK={curK} onClose={()=>setShowSum(false)}/>}
 
       <div style={card}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
@@ -291,11 +284,10 @@ export default function App(){
         {sess.length===0&&<div style={{textAlign:"center",padding:"12px 0",color:"#94a3b8",fontSize:14}}>Tap "All" to add players</div>}
 
         {sess.map(p=>{
-          const c=comp.find(x=>x.name===p.name),w=c?.winnings??0,tx=c?.tax??0,isTop=topL?.name===p.name;
-          return(<div key={p.name} style={{marginBottom:6,borderRadius:10,border:isTop?"1.5px solid #fca5a5":"1px solid #e2e8f0",padding:"8px 10px",background:isTop?"#fff8f0":"#fff"}}>
+          const c=comp.find(x=>x.name===p.name),w=c?.winnings??0,tx=c?.tax??0;
+          return(<div key={p.name} style={{marginBottom:6,borderRadius:10,border:"1px solid #e2e8f0",padding:"8px 10px",background:"#fff"}}>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <div style={{width:32,height:32,borderRadius:"50%",background:"#e8f4fd",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:"#185fa5",flexShrink:0}}>{p.name}</div>
-              {isTop&&<span style={{fontSize:9,background:"#fde8e8",color:"#a32d2d",borderRadius:4,padding:"1px 5px",fontWeight:700}}>TOP LOSER</span>}
               <div style={{display:"flex",alignItems:"center",gap:5,marginLeft:"auto"}}>
                 <button onClick={()=>chgR(p.name,-1)} style={{width:26,height:26,borderRadius:"50%",border:"1px solid #e2e8f0",background:"#f8fafc",fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>−</button>
                 <div style={{textAlign:"center",minWidth:28}}><div style={{fontSize:15,fontWeight:800}}>{p.rebuys}</div><div style={{fontSize:9,color:"#94a3b8"}}>x$1k</div></div>
@@ -329,7 +321,7 @@ export default function App(){
 
       <div style={card}>
         <div style={{fontSize:15,fontWeight:700,marginBottom:10}}>🏦 Kitty</div>
-        {[{l:"Previous kitty",v:"$"+f(prevK)},{l:"Tax collected",v:"+$"+f(totTax),c:"#1a7a3e"},...extras.map(e=>({l:e.label,v:"-$"+f(e.amount),c:"#a32d2d"})),{l:"Rebate ("+(topL?topL.name:"—")+")",v:rebate>0?"-$"+f(rebate):"—",c:rebate>0?"#a32d2d":"#94a3b8"}].map((r,i)=>(
+        {[{l:"Previous kitty",v:"$"+f(prevK)},{l:"Tax collected",v:"+$"+f(totTax),c:"#1a7a3e"},...extras.map(e=>({l:e.label,v:"-$"+f(e.amount),c:"#a32d2d"}))].map((r,i)=>(
           <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 10px",background:"#f8fafc",borderRadius:8,marginBottom:5,border:"1px solid #e2e8f0"}}>
             <span style={{fontSize:13,color:"#64748b"}}>{r.l}</span><span style={{fontSize:14,fontWeight:600,color:r.c||"#1e293b"}}>{r.v}</span>
           </div>
