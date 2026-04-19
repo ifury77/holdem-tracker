@@ -312,31 +312,28 @@ function YTD({history,onClose}){
   const year=new Date().getFullYear().toString();
   const sessions=useMemo(()=>[...history].filter(h=>h.date.startsWith(year)).sort((a,b)=>a.date.localeCompare(b.date)),[history,year]);
 
-  // All players who appeared this year
-  const ytdPlayers=useMemo(()=>{
-    const s=new Set();
-    sessions.forEach(sess=>(sess.players||[]).forEach(p=>s.add(p.name)));
-    return[...s].sort((a,b)=>a.localeCompare(b));
-  },[sessions]);
-
-  // Per player YTD totals
+  // Per player YTD totals — sorted by net desc
   const ytd=useMemo(()=>{
     const map={};
-    ytdPlayers.forEach(n=>{map[n]={name:n,attend:0,grossWin:0,grossLoss:0,tax:0,rebate:0,net:0};});
     sessions.forEach(sess=>{
       (sess.players||[]).forEach(p=>{
-        if(!map[p.name])return;
+        if(!map[p.name])map[p.name]={name:p.name,attend:0,grossWin:0,grossLoss:0,tax:0,rebate:0,net:0,turnover:0};
         const pRebate=p.rebate||0;
+        const pWin=p.winnings||0;
         map[p.name].attend++;
-        map[p.name].grossWin+=(p.winnings||0)>0?(p.winnings||0):0;
-        map[p.name].grossLoss+=(p.winnings||0)<0?(p.winnings||0):0;
+        map[p.name].grossWin+=pWin>0?pWin:0;
+        map[p.name].grossLoss+=pWin<0?pWin:0;
         map[p.name].tax+=p.tax||0;
         map[p.name].rebate+=pRebate;
-        map[p.name].net+=(p.winnings||0)-(p.tax||0)+pRebate;
+        map[p.name].net+=pWin-(p.tax||0)+pRebate;
+        map[p.name].turnover+=Math.abs(pWin-(p.tax||0)+pRebate);
       });
     });
     return Object.values(map).sort((a,b)=>b.net-a.net);
-  },[sessions,ytdPlayers]);
+  },[sessions]);
+
+  // Players ordered by YTD net desc for column headers
+  const ytdPlayers=useMemo(()=>ytd.map(p=>p.name),[ytd]);
 
   return(
     <div style={{...card,marginBottom:12}}>
@@ -377,55 +374,99 @@ function YTD({history,onClose}){
           </table>
         </div>
 
-        {/* Session by session results */}
-        <div style={{fontSize:10,fontWeight:700,color:"#475569",letterSpacing:".08em",marginBottom:8}}>SESSION RESULTS</div>
+        {/* Session by session results grid */}
+        <div style={{fontSize:10,fontWeight:700,color:"#475569",letterSpacing:".08em",marginBottom:8,marginTop:4}}>SESSION RESULTS (Net after tax & rebate)</div>
         <div style={{overflowX:"auto"}}>
           <table style={{borderCollapse:"collapse",fontSize:10,minWidth:"100%"}}>
             <thead>
-              <tr style={{background:"#1a1a2e"}}>
-                <th style={{padding:"5px 6px",textAlign:"left",color:"#94a3b8",fontWeight:700,whiteSpace:"nowrap",position:"sticky",left:0,background:"#1a1a2e"}}>Date</th>
-                {ytdPlayers.map(n=><th key={n} style={{padding:"5px 4px",textAlign:"right",color:"#94a3b8",fontWeight:700,minWidth:44}}>{n}</th>)}
-                <th style={{padding:"5px 4px",textAlign:"right",color:"#94a3b8",fontWeight:700}}>Players</th>
+              <tr style={{background:"#0f172a"}}>
+                <th style={{padding:"5px 6px",textAlign:"left",color:"#64748b",fontWeight:700,whiteSpace:"nowrap",position:"sticky",left:0,background:"#0f172a",minWidth:60}}>Date</th>
+                {ytdPlayers.map(n=><th key={n} style={{padding:"5px 5px",textAlign:"right",color:"#94a3b8",fontWeight:700,minWidth:52}}>{n}</th>)}
+                <th style={{padding:"5px 5px",textAlign:"right",color:"#64748b",fontWeight:700,minWidth:40}}>#</th>
+                <th style={{padding:"5px 5px",textAlign:"right",color:"#60a5fa",fontWeight:700,minWidth:60}}>Turnover</th>
+              </tr>
+              {/* Attendance row */}
+              <tr style={{background:"#1a3a6e"}}>
+                <td style={{padding:"4px 6px",color:"#93c5fd",fontWeight:700,position:"sticky",left:0,background:"#1a3a6e",fontSize:9}}>ATTEND</td>
+                {ytdPlayers.map(n=>{
+                  const p=ytd.find(x=>x.name===n);
+                  return <td key={n} style={{padding:"4px 5px",textAlign:"right",color:"#93c5fd",fontWeight:700}}>{p?p.attend:0}</td>;
+                })}
+                <td/><td/>
+              </tr>
+              {/* YTD Winning row */}
+              <tr style={{background:"#0d2818"}}>
+                <td style={{padding:"4px 6px",color:"#4ade80",fontWeight:700,position:"sticky",left:0,background:"#0d2818",fontSize:9}}>YTD WIN</td>
+                {ytdPlayers.map(n=>{
+                  const p=ytd.find(x=>x.name===n);
+                  const v=p?p.grossWin:0;
+                  return <td key={n} style={{padding:"4px 5px",textAlign:"right",fontWeight:700,color:"#4ade80"}}>{v>0?"+$"+f(v):"—"}</td>;
+                })}
+                <td/><td/>
+              </tr>
+              {/* YTD Losses row */}
+              <tr style={{background:"#2d1a1a"}}>
+                <td style={{padding:"4px 6px",color:"#f87171",fontWeight:700,position:"sticky",left:0,background:"#2d1a1a",fontSize:9}}>YTD LOSS</td>
+                {ytdPlayers.map(n=>{
+                  const p=ytd.find(x=>x.name===n);
+                  const v=p?p.grossLoss:0;
+                  return <td key={n} style={{padding:"4px 5px",textAlign:"right",fontWeight:700,color:"#f87171"}}>{v<0?"-$"+f(Math.abs(v)):"—"}</td>;
+                })}
+                <td/><td/>
+              </tr>
+              {/* YTD Net row */}
+              <tr style={{background:"#1a1a2e",borderBottom:"2px solid #334155"}}>
+                <td style={{padding:"5px 6px",color:"#e2e8f0",fontWeight:800,position:"sticky",left:0,background:"#1a1a2e",fontSize:9,letterSpacing:".04em"}}>YTD NET</td>
+                {ytdPlayers.map(n=>{
+                  const p=ytd.find(x=>x.name===n);
+                  const v=p?p.net:0;
+                  return(
+                    <td key={n} style={{padding:"5px 5px",textAlign:"right",fontWeight:800,color:v>0?"#4ade80":v<0?"#f87171":"#94a3b8"}}>
+                      {v===0?"—":fs(v)}
+                    </td>
+                  );
+                })}
+                <td style={{padding:"5px 5px",textAlign:"right",color:"#94a3b8"}}>{sessions.length}s</td>
+                <td/>
               </tr>
             </thead>
             <tbody>
               {sessions.map((sess,si)=>{
                 const pMap={};
+                let sessTO=0;
                 (sess.players||[]).forEach(p=>{
                   const pRebate=p.rebate||0;
-                  pMap[p.name]=(p.winnings||0)-(p.tax||0)+pRebate;
+                  const pNet=(p.winnings||0)-(p.tax||0)+pRebate;
+                  pMap[p.name]=pNet;
+                  sessTO+=Math.abs(pNet);
                 });
+                // Turnover = sum of winners net (half of total pool movement)
+                const winnerTO=(sess.players||[]).filter(p=>{
+                  const pRebate=p.rebate||0;
+                  return (p.winnings||0)-(p.tax||0)+pRebate>0;
+                }).reduce((s,p)=>{
+                  const pRebate=p.rebate||0;
+                  return s+(p.winnings||0)-(p.tax||0)+pRebate;
+                },0);
+                const bg=si%2===0?"#fff":"#f8fafc";
                 return(
-                  <tr key={sess.date} style={{borderBottom:"0.5px solid #e2e8f0",background:si%2===0?"#fff":"#f8fafc"}}>
-                    <td style={{padding:"4px 6px",fontWeight:700,whiteSpace:"nowrap",position:"sticky",left:0,background:si%2===0?"#fff":"#f8fafc"}}>{lbl(sess.date)}</td>
+                  <tr key={sess.date} style={{borderBottom:"0.5px solid #e2e8f0",background:bg}}>
+                    <td style={{padding:"4px 6px",fontWeight:700,whiteSpace:"nowrap",position:"sticky",left:0,background:bg,color:"#1e293b"}}>{lbl(sess.date)}</td>
                     {ytdPlayers.map(n=>{
                       const v=pMap[n];
                       return(
-                        <td key={n} style={{padding:"4px 4px",textAlign:"right",fontWeight:600,
-                          color:v===undefined?"#e2e8f0":v>0?"#1a7a3e":v<0?"#a32d2d":"#64748b",
+                        <td key={n} style={{padding:"4px 5px",textAlign:"right",fontWeight:600,
+                          color:v===undefined?"transparent":v>0?"#1a7a3e":v<0?"#a32d2d":"#64748b",
                           background:v===undefined?"transparent":v>0?"#d4f7e0":v<0?"#fde8e8":"transparent"}}>
                           {v===undefined?"":v===0?"—":fs(v)}
                         </td>
                       );
                     })}
-                    <td style={{padding:"4px 4px",textAlign:"right",color:"#64748b"}}>{(sess.players||[]).length}</td>
+                    <td style={{padding:"4px 5px",textAlign:"right",color:"#64748b"}}>{(sess.players||[]).length}</td>
+                    <td style={{padding:"4px 5px",textAlign:"right",color:"#3b82f6",fontWeight:600}}>${f(winnerTO*2)}</td>
                   </tr>
                 );
               })}
-              {/* YTD totals row */}
-              <tr style={{background:"#1a1a2e",fontWeight:700}}>
-                <td style={{padding:"5px 6px",color:"#e2e8f0",position:"sticky",left:0,background:"#1a1a2e",fontSize:9,letterSpacing:".04em"}}>YTD NET</td>
-                {ytdPlayers.map(n=>{
-                  const p=ytd.find(x=>x.name===n);
-                  const v=p?p.net:0;
-                  return(
-                    <td key={n} style={{padding:"5px 4px",textAlign:"right",fontWeight:800,color:v>0?"#4ade80":v<0?"#f87171":"#94a3b8"}}>
-                      {v===0?"—":fs(v)}
-                    </td>
-                  );
-                })}
-                <td style={{padding:"5px 4px",textAlign:"right",color:"#94a3b8"}}>{sessions.length}s</td>
-              </tr>
             </tbody>
           </table>
         </div>
