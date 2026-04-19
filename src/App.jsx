@@ -664,6 +664,9 @@ function Hist({history,onClose}){
 }
 
 // ── MAIN APP ──────────────────────────────────────────────────────
+// Unique device ID so we don't echo our own writes back
+const _deviceId=Math.random().toString(36).slice(2);
+
 export default function App(){
   const td=new Date().toISOString().split("T")[0];
   const[date,setDate]=useState(td);
@@ -681,6 +684,7 @@ export default function App(){
   const[saving,setSaving]=useState(false);
   const[loading,setLoading]=useState(true);
 
+  // ── Live history listener ─────────────────────────────────────────
   useEffect(()=>{
     const unsub=onSnapshot(collection(db,"sessions"),(snap)=>{
       const data=snap.docs.map(d=>d.data()).sort((a,b)=>a.date.localeCompare(b.date));
@@ -689,6 +693,38 @@ export default function App(){
     },(err)=>{console.error("Firestore:",err);setLoading(false);});
     return()=>unsub();
   },[]);
+
+  // ── Live game state sync ──────────────────────────────────────────
+  // Writes current game state to Firestore "live/current" doc on every change
+  // All devices read from it in real time
+  const liveRef=doc(db,"live","current");
+
+  useEffect(()=>{
+    const unsub=onSnapshot(liveRef,(snap)=>{
+      if(!snap.exists())return;
+      const d=snap.data();
+      // Only apply if from another device (avoid overwriting local edits)
+      if(d._source===_deviceId)return;
+      setDate(d.date||new Date().toISOString().split("T")[0]);
+      setPlayers(d.players||NAMES.map(n=>({name:n,inSession:false,rebuys:0,finalChips:""})));
+      setExtras(d.extras||[]);
+    });
+    return()=>unsub();
+  },[]);
+
+  // Debounce live writes — push state to Firestore 800ms after last change
+  useEffect(()=>{
+    const t=setTimeout(()=>{
+      setDoc(liveRef,{
+        date,
+        players,
+        extras,
+        _source:_deviceId,
+        _ts:Date.now()
+      }).catch(()=>{});
+    },800);
+    return()=>clearTimeout(t);
+  },[date,players,extras]);
 
   const prevK=useMemo(()=>{
     const past=history.filter(h=>h.date<date).sort((a,b)=>b.date.localeCompare(a.date));
@@ -731,10 +767,14 @@ export default function App(){
   };
 
   const newSess=()=>{
-    setPlayers(ps=>ps.filter(p=>NAMES.includes(p.name)).map(p=>({...p,inSession:false,rebuys:0,finalChips:""})));
+    const freshPlayers=NAMES.map(n=>({name:n,inSession:false,rebuys:0,finalChips:""}));
+    const nextDate=new Date();nextDate.setDate(nextDate.getDate()+1);
+    const nd=nextDate.toISOString().split("T")[0];
+    setPlayers(freshPlayers);
     setExtras([]);setConfirmNew(false);setShowSum(false);
-    const t=new Date();t.setDate(t.getDate()+1);
-    setDate(t.toISOString().split("T")[0]);
+    setDate(nd);
+    // Push cleared state to live doc immediately
+    setDoc(doc(db,"live","current"),{date:nd,players:freshPlayers,extras:[],_source:_deviceId,_ts:Date.now()}).catch(()=>{});
   };
 
   const navBtn=(v,label)=>(
@@ -751,7 +791,11 @@ export default function App(){
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
           <span style={{fontSize:22}}>♠</span>
           <div style={{flex:1}}><div style={{fontSize:15,fontWeight:700,color:"#fff"}}>RiverRat MPS</div><Cal date={date} setDate={setDate}/></div>
-          <div style={{textAlign:"center"}}><div style={{fontSize:10,color:"#94a3b8"}}>playing</div><div style={{fontSize:20,fontWeight:800,color:"#4ade80"}}>{sess.length}</div></div>
+          <div style={{textAlign:"center"}}>
+            <div style={{fontSize:10,color:"#94a3b8"}}>playing</div>
+            <div style={{fontSize:20,fontWeight:800,color:"#4ade80"}}>{sess.length}</div>
+            <div style={{fontSize:8,color:"#4ade80",opacity:0.7}}>● LIVE</div>
+          </div>
         </div>
         {/* Nav tabs */}
         <div style={{display:"flex",background:"rgba(255,255,255,.08)",borderRadius:10,padding:3,gap:2}}>
