@@ -35,36 +35,70 @@ function mkSettle(comp){
   return tx;
 }
 
-// ── RIVER RAT MASTERS LOGO ────────────────────────────────────────
+// ── RIVER RAT MASTERS LOGO (iOS square style) ────────────────────
 function RRLogo({size=44}){
   return(
     <svg width={size} height={size} viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="60" cy="60" r="58" fill="#0d1a2e" stroke="#3a7acc" strokeWidth="2"/>
-      {/* Crown points */}
-      <polygon points="28,54 40,26 53,46 60,20 67,46 80,26 92,54" fill="#6ab8ff" stroke="#0a2255" strokeWidth="2"/>
-      {/* Crown gem tips */}
-      <rect x="36" y="20" width="9" height="9" rx="2" transform="rotate(45,40.5,24.5)" fill="#c8e8ff"/>
-      <rect x="56" y="13" width="10" height="10" rx="2" transform="rotate(45,61,18)" fill="#ffffff"/>
-      <rect x="75" y="20" width="9" height="9" rx="2" transform="rotate(45,79.5,24.5)" fill="#c8e8ff"/>
+      {/* iOS rounded square background */}
+      <rect width="120" height="120" rx="26" ry="26" fill="#000000"/>
+      <rect width="120" height="120" rx="26" ry="26" fill="#06090f"/>
+      {/* Subtle gradient overlay */}
+      <radialGradient id="rrlbg" cx="50%" cy="42%" r="60%">
+        <stop offset="0%" stopColor="#1e3060"/>
+        <stop offset="100%" stopColor="#06090f"/>
+      </radialGradient>
+      <rect width="120" height="120" rx="26" ry="26" fill="url(#rrlbg)"/>
+
+      {/* Crown - 5 points */}
+      <polygon points="10,42 20,18 31,34 38,22 60,8 82,22 89,34 100,18 110,42"
+        fill="#5BA4D4" stroke="#0a1e4a" strokeWidth="2"/>
       {/* Crown base band */}
-      <rect x="26" y="52" width="68" height="11" rx="4" fill="#6ab8ff" stroke="#0a2255" strokeWidth="1.5"/>
-      {/* Central gem diamond */}
-      <polygon points="60,58 72,66 60,74 48,66" fill="#a8d8ff" stroke="#0a2255" strokeWidth="1.5"/>
-      <polygon points="60,58 72,66 60,65" fill="#e0f0ff" opacity="0.5"/>
-      {/* Body/figure */}
-      <ellipse cx="60" cy="90" rx="28" ry="20" fill="#1a3a6e" stroke="#0a2255" strokeWidth="1.5"/>
-      {/* R jersey letter */}
-      <text x="60" y="96" fontFamily="Arial Black,Impact,sans-serif" fontSize="18" fontWeight="900" fill="#c8e8ff" textAnchor="middle" stroke="#0a2255" strokeWidth="1">R</text>
-      {/* Left card (clubs) */}
-      <g transform="rotate(-30,38,88)">
-        <rect x="24" y="74" width="18" height="26" rx="3" fill="#ddeeff" stroke="#1a3a6e" strokeWidth="1.5"/>
-        <text x="28" y="87" fontFamily="Georgia,serif" fontSize="10" fill="#1a3a6e">♣</text>
+      <rect x="8" y="40" width="104" height="10" rx="3" fill="#5BA4D4" stroke="#0a1e4a" strokeWidth="1.5"/>
+
+      {/* Crown tip gems */}
+      <rect x="15" y="12" width="10" height="10" rx="1" transform="rotate(45,20,17)" fill="#A8D1F0" stroke="#0a1e4a" strokeWidth="1"/>
+      <rect x="35" y="20" width="8" height="8" rx="1" transform="rotate(45,39,24)" fill="#c8e8ff" stroke="#0a1e4a" strokeWidth="1"/>
+      <rect x="55" y="2" width="10" height="10" rx="1" transform="rotate(45,60,7)" fill="#ffffff" stroke="#0a1e4a" strokeWidth="1"/>
+      <rect x="77" y="20" width="8" height="8" rx="1" transform="rotate(45,81,24)" fill="#c8e8ff" stroke="#0a1e4a" strokeWidth="1"/>
+      <rect x="95" y="12" width="10" height="10" rx="1" transform="rotate(45,100,17)" fill="#A8D1F0" stroke="#0a1e4a" strokeWidth="1"/>
+
+      {/* Gem diamond */}
+      <polygon points="60,47 74,54 74,62 60,69 46,62 46,54" fill="#7fc4f0" stroke="#0a1e4a" strokeWidth="1.5"/>
+      <polygon points="60,47 74,54 60,53 46,54" fill="#d0ecff" opacity="0.6"/>
+      <ellipse cx="57" cy="52" rx="6" ry="3" fill="#ffffff" opacity="0.28" transform="rotate(-15,57,52)"/>
+
+      {/* Body/jersey */}
+      <path d="M28,68 Q60,60 92,68 L93,88 Q60,96 27,88 Z" fill="#1a4a9a" stroke="#0a1e4a" strokeWidth="1.5"/>
+      <rect x="44" y="67" width="32" height="24" rx="4" fill="#081840" stroke="#5BA4D4" strokeWidth="2"/>
+      <text x="60" y="84" fontFamily="Arial Black,Impact,sans-serif" fontSize="17" fontWeight="900"
+        fill="#A8D1F0" textAnchor="middle" stroke="#0a1e4a" strokeWidth="1">R</text>
+
+      {/* Left card */}
+      <g transform="rotate(-28,30,80)">
+        <rect x="16" y="66" width="18" height="26" rx="3" fill="#c8e0ff" stroke="#1a3a6e" strokeWidth="1.5"/>
+        <rect x="17" y="67" width="16" height="24" rx="2" fill="#ffffff"/>
+        <text x="19" y="78" fontFamily="Georgia,serif" fontSize="8" fill="#0d2060">♣</text>
       </g>
-      {/* Right card (spades) */}
-      <g transform="rotate(30,82,88)">
-        <rect x="78" y="74" width="18" height="26" rx="3" fill="#ddeeff" stroke="#1a3a6e" strokeWidth="1.5"/>
-        <text x="82" y="87" fontFamily="Georgia,serif" fontSize="10" fill="#1a3a6e">♠</text>
+      {/* Right card */}
+      <g transform="rotate(28,90,80)">
+        <rect x="86" y="66" width="18" height="26" rx="3" fill="#c8e0ff" stroke="#1a3a6e" strokeWidth="1.5"/>
+        <rect x="87" y="67" width="16" height="24" rx="2" fill="#ffffff"/>
+        <text x="89" y="78" fontFamily="Georgia,serif" fontSize="8" fill="#0d2060">♠</text>
       </g>
+
+      {/* Bottom lines + text — all inside the square */}
+      <line x1="6" y1="100" x2="114" y2="100" stroke="#5BA4D4" strokeWidth="1.5" strokeLinecap="round"/>
+      <line x1="6" y1="113" x2="114" y2="113" stroke="#5BA4D4" strokeWidth="1.5" strokeLinecap="round"/>
+      <circle cx="6"   cy="100" r="2" fill="#5BA4D4"/>
+      <circle cx="114" cy="100" r="2" fill="#5BA4D4"/>
+      <circle cx="6"   cy="113" r="2" fill="#5BA4D4"/>
+      <circle cx="114" cy="113" r="2" fill="#5BA4D4"/>
+      <text x="60" y="109" fontFamily="Arial Black,Impact,sans-serif" fontSize="6.2" fontWeight="900"
+        fill="#5BA4D4" textAnchor="middle" stroke="#000" strokeWidth="2" paintOrder="stroke"
+        letterSpacing="0.3">RIVER RAT MASTERS</text>
+
+      {/* Subtle border */}
+      <rect width="120" height="120" rx="26" ry="26" fill="none" stroke="#2266BB" strokeWidth="2" opacity="0.5"/>
     </svg>
   );
 }
