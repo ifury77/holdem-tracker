@@ -154,6 +154,8 @@ function Spark({values,color}){
 // ── LEADERBOARD ───────────────────────────────────────────────────
 function Leaderboard({history,onClose}){
   const[selMonth,setSelMonth]=useState(null);
+  const[sortLB,setSortLB]=useState("net-desc");
+  const[filterPlayer,setFilterPlayer]=useState("");
 
   const months=useMemo(()=>{
     const s=new Set(history.map(h=>h.date.slice(0,7)));
@@ -181,11 +183,22 @@ function Leaderboard({history,onClose}){
         if(pNet>0)d.wins++;else if(pNet<0)d.losses++;
       });
     });
-    return Object.values(map).sort((a,b)=>b.totalNet-a.totalNet);
+    return Object.values(map);
   };
 
-  const allStats=useMemo(()=>buildStats(history),[history]);
-  const monthStats=useMemo(()=>buildStats(history.filter(h=>h.date.startsWith(selMonth||""))),[history,selMonth]);
+  const sortStats=(arr,key)=>{
+    const s=[...arr];
+    if(key==="net-desc") return s.sort((a,b)=>b.totalNet-a.totalNet);
+    if(key==="net-asc")  return s.sort((a,b)=>a.totalNet-b.totalNet);
+    if(key==="win-desc") return s.sort((a,b)=>b.grossWin-a.grossWin);
+    if(key==="loss-asc") return s.sort((a,b)=>a.grossLoss-b.grossLoss);
+    if(key==="sess-desc") return s.sort((a,b)=>b.sessions-a.sessions);
+    if(key==="name-asc") return s.sort((a,b)=>a.name.localeCompare(b.name));
+    return s;
+  };
+
+  const allStats=useMemo(()=>sortStats(buildStats(history).filter(p=>!filterPlayer||p.name.toLowerCase().includes(filterPlayer.toLowerCase())),sortLB),[history,sortLB,filterPlayer]);
+  const monthStats=useMemo(()=>sortStats(buildStats(history.filter(h=>h.date.startsWith(selMonth||""))).filter(p=>!filterPlayer||p.name.toLowerCase().includes(filterPlayer.toLowerCase())),sortLB),[history,selMonth,sortLB,filterPlayer]);
 
   const attendance=useMemo(()=>{
     const map={};
@@ -229,6 +242,17 @@ function Leaderboard({history,onClose}){
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
         <span style={{fontSize:15,fontWeight:700}}>🏆 Leaderboard</span>
         <button onClick={onClose} style={{fontSize:13,padding:"3px 10px",borderRadius:8,border:"0.5px solid var(--color-border-tertiary)",background:"var(--color-background-secondary)",cursor:"pointer"}}>Close</button>
+      </div>
+
+      {/* Filter + Sort */}
+      <div style={{marginBottom:8}}>
+        <input value={filterPlayer} onChange={e=>setFilterPlayer(e.target.value)} placeholder="🔍 Filter player..." style={{width:"100%",fontSize:11,padding:"5px 8px",borderRadius:7,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#1e293b",marginBottom:6,boxSizing:"border-box"}}/>
+        <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
+          <span style={{fontSize:9,color:"#94a3b8",alignSelf:"center"}}>Sort:</span>
+          {[["net-desc","Net ↓"],["net-asc","Net ↑"],["win-desc","Win ↓"],["loss-asc","Loss ↑"],["sess-desc","Sessions ↓"],["name-asc","Name"]].map(([v,l])=>(
+            <button key={v} onClick={()=>setSortLB(v)} style={{fontSize:9,padding:"2px 7px",borderRadius:5,border:"none",fontWeight:sortLB===v?700:400,background:sortLB===v?"#185fa5":"#e2e8f0",color:sortLB===v?"#fff":"#64748b",cursor:"pointer"}}>{l}</button>
+          ))}
+        </div>
       </div>
 
       {/* Column headers */}
@@ -310,7 +334,16 @@ function Leaderboard({history,onClose}){
 // ── YTD TABLE ─────────────────────────────────────────────────────
 function YTD({history,onClose}){
   const year=new Date().getFullYear().toString();
-  const sessions=useMemo(()=>[...history].filter(h=>h.date.startsWith(year)).sort((a,b)=>a.date.localeCompare(b.date)),[history,year]);
+  const[sortYTD,setSortYTD]=useState("net-desc");
+  const[filterYTD,setFilterYTD]=useState("");
+  const[yearFilter,setYearFilter]=useState(year);
+
+  const availYears=useMemo(()=>{
+    const s=new Set(history.map(h=>h.date.slice(0,4)));
+    return[...s].sort((a,b)=>b.localeCompare(a));
+  },[history]);
+
+  const sessions=useMemo(()=>[...history].filter(h=>h.date.startsWith(yearFilter)).sort((a,b)=>a.date.localeCompare(b.date)),[history,yearFilter]);
 
   // Per player YTD totals — sorted by net desc
   const ytd=useMemo(()=>{
@@ -329,8 +362,15 @@ function YTD({history,onClose}){
         map[p.name].turnover+=Math.abs(pWin-(p.tax||0)+pRebate);
       });
     });
-    return Object.values(map).sort((a,b)=>b.net-a.net);
-  },[sessions]);
+    const arr=Object.values(map);
+    if(sortYTD==="net-desc")  arr.sort((a,b)=>b.net-a.net);
+    if(sortYTD==="net-asc")   arr.sort((a,b)=>a.net-b.net);
+    if(sortYTD==="win-desc")  arr.sort((a,b)=>b.grossWin-a.grossWin);
+    if(sortYTD==="loss-asc")  arr.sort((a,b)=>a.grossLoss-b.grossLoss);
+    if(sortYTD==="att-desc")  arr.sort((a,b)=>b.attend-a.attend);
+    if(sortYTD==="name-asc")  arr.sort((a,b)=>a.name.localeCompare(b.name));
+    return filterYTD?arr.filter(p=>p.name.toLowerCase().includes(filterYTD.toLowerCase())):arr;
+  },[sessions,sortYTD,filterYTD]);
 
   // Players ordered by YTD net desc for column headers
   const ytdPlayers=useMemo(()=>ytd.map(p=>p.name),[ytd]);
@@ -338,8 +378,27 @@ function YTD({history,onClose}){
   return(
     <div style={{...card,marginBottom:12}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-        <span style={{fontSize:15,fontWeight:700}}>📊 YTD {year}</span>
+        <span style={{fontSize:15,fontWeight:700}}>📊 YTD {yearFilter}</span>
         <button onClick={onClose} style={{fontSize:13,padding:"3px 10px",borderRadius:8,border:"0.5px solid var(--color-border-tertiary)",background:"var(--color-background-secondary)",cursor:"pointer"}}>Close</button>
+      </div>
+
+      {/* Year + Filter + Sort controls */}
+      <div style={{marginBottom:10}}>
+        {/* Year selector */}
+        <div style={{display:"flex",gap:5,marginBottom:6,overflowX:"auto",paddingBottom:2}}>
+          {availYears.map(y=>(
+            <button key={y} onClick={()=>setYearFilter(y)} style={{flexShrink:0,fontSize:11,padding:"3px 10px",borderRadius:7,border:"none",fontWeight:yearFilter===y?700:400,background:yearFilter===y?"#1a3a6e":"#e2e8f0",color:yearFilter===y?"#fff":"#64748b",cursor:"pointer"}}>{y}</button>
+          ))}
+        </div>
+        {/* Player filter */}
+        <input value={filterYTD} onChange={e=>setFilterYTD(e.target.value)} placeholder="🔍 Filter player..." style={{width:"100%",fontSize:11,padding:"5px 8px",borderRadius:7,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#1e293b",marginBottom:6,boxSizing:"border-box"}}/>
+        {/* Sort */}
+        <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
+          <span style={{fontSize:9,color:"#94a3b8",alignSelf:"center"}}>Sort:</span>
+          {[["net-desc","Net ↓"],["net-asc","Net ↑"],["win-desc","Win ↓"],["loss-asc","Loss ↑"],["att-desc","Att ↓"],["name-asc","Name"]].map(([v,l])=>(
+            <button key={v} onClick={()=>setSortYTD(v)} style={{fontSize:9,padding:"2px 7px",borderRadius:5,border:"none",fontWeight:sortYTD===v?700:400,background:sortYTD===v?"#185fa5":"#e2e8f0",color:sortYTD===v?"#fff":"#64748b",cursor:"pointer"}}>{l}</button>
+          ))}
+        </div>
       </div>
 
       {sessions.length===0?<div style={{textAlign:"center",padding:16,color:"#94a3b8"}}>No sessions this year</div>:<>
@@ -478,9 +537,38 @@ function YTD({history,onClose}){
 // ── HISTORY ───────────────────────────────────────────────────────
 function Hist({history,onClose}){
   const[sel,setSel]=useState(null);
+  const[search,setSearch]=useState("");
+  const[sortH,setSortH]=useState("date-desc"); // date-desc | date-asc | kitty-desc | kitty-asc | players-desc
+  const[filterMonth,setFilterMonth]=useState("all");
+
+  const months=useMemo(()=>{
+    const s=new Set(history.map(h=>h.date.slice(0,7)));
+    return[...s].sort((a,b)=>b.localeCompare(a));
+  },[history]);
+
+  const filtered=useMemo(()=>{
+    let list=[...history];
+    if(filterMonth!=="all") list=list.filter(s=>s.date.startsWith(filterMonth));
+    if(search.trim()) list=list.filter(s=>
+      lbl(s.date).toLowerCase().includes(search.toLowerCase())||
+      (s.players||[]).some(p=>p.name.toLowerCase().includes(search.toLowerCase()))
+    );
+    list.sort((a,b)=>{
+      if(sortH==="date-desc") return b.date.localeCompare(a.date);
+      if(sortH==="date-asc")  return a.date.localeCompare(b.date);
+      if(sortH==="kitty-desc") return (b.kittyEnd||0)-(a.kittyEnd||0);
+      if(sortH==="kitty-asc")  return (a.kittyEnd||0)-(b.kittyEnd||0);
+      if(sortH==="players-desc") return (b.players||[]).length-(a.players||[]).length;
+      return 0;
+    });
+    return list;
+  },[history,filterMonth,search,sortH]);
+
   const h=sel?history.find(x=>x.date===sel):null;
-  const sorted=[...history].sort((a,b)=>b.date.localeCompare(a.date));
   const totEx=h?(h.extras||[]).reduce((s,e)=>s+Number(e.amount||0),0):0;
+  const selBtn=(val,cur,set,label)=>(
+    <button onClick={()=>set(val)} style={{fontSize:10,padding:"3px 8px",borderRadius:6,border:"none",fontWeight:cur===val?700:400,background:cur===val?"#185fa5":"#e2e8f0",color:cur===val?"#fff":"#64748b",cursor:"pointer",whiteSpace:"nowrap"}}>{label}</button>
+  );
 
   return(
     <div style={{...card,marginBottom:12}}>
@@ -491,16 +579,35 @@ function Hist({history,onClose}){
         </button>
       </div>
 
-      {!h&&(sorted.length===0
-        ?<p style={{textAlign:"center",color:"var(--color-text-secondary)"}}>No sessions yet.</p>
-        :sorted.map(s=><div key={s.date} onClick={()=>setSel(s.date)} style={{display:"flex",justifyContent:"space-between",padding:"10px 12px",background:"var(--color-background-secondary)",borderRadius:10,marginBottom:7,cursor:"pointer"}}>
-          <div>
-            <div style={{fontSize:14,fontWeight:700}}>{lbl(s.date)}</div>
-            <div style={{fontSize:12,color:"var(--color-text-secondary)"}}>{(s.players||[]).length} players · kitty ${f(s.kittyEnd)}</div>
-          </div>
-          <span style={{color:"var(--color-text-tertiary)"}}>›</span>
-        </div>)
-      )}
+      {!h&&<>
+        {/* Search */}
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search date or player..." style={{width:"100%",fontSize:12,padding:"6px 10px",borderRadius:8,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#1e293b",marginBottom:8,boxSizing:"border-box"}}/>
+        {/* Month filter */}
+        <div style={{display:"flex",gap:5,overflowX:"auto",paddingBottom:4,marginBottom:6}}>
+          {selBtn("all",filterMonth,setFilterMonth,"All")}
+          {months.map(m=>{const[y,mo]=m.split("-");return selBtn(m,filterMonth,setFilterMonth,MON[+mo-1]+" "+y.slice(2));})}
+        </div>
+        {/* Sort */}
+        <div style={{display:"flex",gap:4,marginBottom:10,flexWrap:"wrap"}}>
+          <span style={{fontSize:10,color:"#94a3b8",alignSelf:"center"}}>Sort:</span>
+          {selBtn("date-desc",sortH,setSortH,"Date ↓")}
+          {selBtn("date-asc",sortH,setSortH,"Date ↑")}
+          {selBtn("kitty-desc",sortH,setSortH,"Kitty ↓")}
+          {selBtn("kitty-asc",sortH,setSortH,"Kitty ↑")}
+          {selBtn("players-desc",sortH,setSortH,"Players ↓")}
+        </div>
+        <div style={{fontSize:11,color:"#94a3b8",marginBottom:8}}>{filtered.length} session{filtered.length!==1?"s":""}</div>
+        {filtered.length===0
+          ?<p style={{textAlign:"center",color:"var(--color-text-secondary)"}}>No sessions found.</p>
+          :filtered.map(s=><div key={s.date} onClick={()=>setSel(s.date)} style={{display:"flex",justifyContent:"space-between",padding:"10px 12px",background:"var(--color-background-secondary)",borderRadius:10,marginBottom:7,cursor:"pointer"}}>
+            <div>
+              <div style={{fontSize:14,fontWeight:700}}>{lbl(s.date)}</div>
+              <div style={{fontSize:12,color:"var(--color-text-secondary)"}}>{(s.players||[]).length} players · kitty ${f(s.kittyEnd)}{s.topLoser?` · rebate→${s.topLoser}`:""}</div>
+            </div>
+            <span style={{color:"var(--color-text-tertiary)"}}>›</span>
+          </div>)
+        }
+      </>}
 
       {h&&<>
         <div style={{fontSize:10,fontWeight:700,color:"#475569",letterSpacing:".08em",marginBottom:6}}>RESULTS</div>
