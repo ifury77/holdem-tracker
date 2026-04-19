@@ -14,7 +14,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 const BUY_IN=1000, TAX=0.2;
-const NAMES=["IO","PN","CW","BT","AK","DS","PK","SC","YS","SY","DT","JN","KC","JW","DH","FC"];
+const NAMES=["IO","PN","CW","BT","AK","DS","PK","SC","YS","SY","DT","JN","KC","JW","DH"];
 const MON=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
 const f=n=>Math.round(n).toLocaleString();
 const fs=n=>n===0?"—":(n>0?"+$"+f(n):"-$"+f(Math.abs(n)));
@@ -86,8 +86,8 @@ function SRow({t}){
 function Summary({date,comp,stl,totTax,extras,prevK,curK,rebate,topL,onClose}){
   const pool=comp.reduce((s,p)=>s+p.buyIn,0);
   return(
-    <div style={{background:"#0f172a",borderRadius:16,marginBottom:12,border:"1px solid #1e293b",overflow:"hidden"}}>
-      <div style={{background:"#1a1a2e",padding:"14px 16px",borderBottom:"1px solid #1e293b"}}>
+    <div style={{background:"#ffffff",borderRadius:16,marginBottom:12,border:"1px solid #e2e8f0",overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,.08)"}}>
+      <div style={{background:"#1a1a2e",padding:"14px 16px",borderBottom:"1px solid #e2e8f0"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
             <div style={{fontSize:10,color:"#64748b",fontWeight:700,letterSpacing:".1em"}}>MPS POKER NIGHT</div>
@@ -97,42 +97,42 @@ function Summary({date,comp,stl,totTax,extras,prevK,curK,rebate,topL,onClose}){
           <button onClick={onClose} style={{background:"rgba(255,255,255,.08)",border:"none",color:"#94a3b8",fontSize:13,padding:"4px 9px",borderRadius:7,cursor:"pointer"}}>✕</button>
         </div>
       </div>
-      <div style={{padding:"12px 16px"}}>
+      <div style={{padding:"12px 16px",background:"#fff"}}>
         <div style={{fontSize:10,fontWeight:700,color:"#475569",letterSpacing:".08em",marginBottom:8}}>RESULTS</div>
         {[...comp].sort((a,b)=>b.winnings-a.winnings).map(p=>(
           <div key={p.name} style={{display:"flex",alignItems:"center",gap:8,marginBottom:7}}>
             <div style={{width:32,height:32,borderRadius:"50%",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,
               background:p.winnings>0?"#14532d":p.winnings<0?"#2d1a1a":"#1e293b",
-              color:p.winnings>0?"#4ade80":p.winnings<0?"#f87171":"#64748b"}}>{p.name}</div>
+              color:p.winnings>0?"#16a34a":p.winnings<0?"#dc2626":"#64748b"}}>{p.name}</div>
             <div style={{flex:1}}>
               <div style={{fontSize:11,color:"#94a3b8"}}>{p.rebuys}x · {f(p.chips)} chips</div>
               {p.name===topL?.name&&rebate>0&&<div style={{fontSize:10,color:"#fbbf24"}}>rebate +${f(rebate)}</div>}
             </div>
             <div style={{textAlign:"right"}}>
-              <div style={{fontSize:14,fontWeight:800,color:p.winnings>0?"#4ade80":p.winnings<0?"#f87171":"#64748b"}}>{p.winnings===0?"—":(p.winnings>0?"+$":"−$")+f(Math.abs(p.winnings))}</div>
-              {p.tax>0&&<div style={{fontSize:9,color:"#86efac"}}>tax ${f(p.tax)}</div>}
+              <div style={{fontSize:14,fontWeight:800,color:p.winnings>0?"#16a34a":p.winnings<0?"#dc2626":"#64748b"}}>{p.winnings===0?"—":(p.winnings>0?"+$":"−$")+f(Math.abs(p.winnings))}</div>
+              {p.tax>0&&<div style={{fontSize:9,color:"#15803d"}}>tax ${f(p.tax)}</div>}
             </div>
           </div>
         ))}
-        <div style={{height:1,background:"#1e293b",margin:"10px 0"}}/>
+        <div style={{height:1,background:"#e2e8f0",margin:"10px 0"}}/>
         <div style={{fontSize:10,fontWeight:700,color:"#475569",letterSpacing:".08em",marginBottom:8}}>SETTLEMENT</div>
         {stl.map((t,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
-          <span style={{fontSize:13,fontWeight:700,color:"#f87171",minWidth:28}}>{t.from}</span>
-          <span style={{fontSize:11,color:"#475569"}}>→</span>
-          <span style={{fontSize:13,fontWeight:700,color:"#4ade80",flex:1}}>{t.to}</span>
-          <span style={{fontSize:14,fontWeight:800,color:"#e2e8f0"}}>${f(t.amount)}</span>
+          <span style={{fontSize:13,fontWeight:700,color:"#dc2626",minWidth:28}}>{t.from}</span>
+          <span style={{fontSize:11,color:"#94a3b8"}}>→</span>
+          <span style={{fontSize:13,fontWeight:700,color:"#16a34a",flex:1}}>{t.to}</span>
+          <span style={{fontSize:14,fontWeight:800,color:"#1e293b"}}>${f(t.amount)}</span>
         </div>)}
-        <div style={{height:1,background:"#1e293b",margin:"10px 0"}}/>
+        <div style={{height:1,background:"#e2e8f0",margin:"10px 0"}}/>
         <div style={{fontSize:10,fontWeight:700,color:"#475569",letterSpacing:".08em",marginBottom:8}}>KITTY</div>
-        <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:13,color:"#64748b"}}>Tax</span><span style={{fontSize:13,fontWeight:600,color:"#4ade80"}}>+${f(totTax)}</span></div>
-        {extras.map((e,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:13,color:"#64748b"}}>{e.label}</span><span style={{fontSize:13,fontWeight:600,color:"#f87171"}}>-${f(e.amount)}</span></div>)}
-        {rebate>0&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:13,color:"#64748b"}}>Rebate ({topL?.name})</span><span style={{fontSize:13,fontWeight:600,color:"#f87171"}}>-${f(rebate)}</span></div>}
-        <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:13,color:"#64748b"}}>Previous</span><span style={{fontSize:13,color:"#94a3b8",fontWeight:600}}>${f(prevK)}</span></div>
-        <div style={{background:"#0d2818",borderRadius:10,padding:"10px 14px",marginTop:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <span style={{fontSize:13,color:"#4ade80",fontWeight:600}}>Current Kitty</span>
-          <span style={{fontSize:20,fontWeight:800,color:"#4ade80"}}>${f(curK)}</span>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:13,color:"#64748b"}}>Tax</span><span style={{fontSize:13,fontWeight:600,color:"#16a34a"}}>+${f(totTax)}</span></div>
+        {extras.map((e,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:13,color:"#64748b"}}>{e.label}</span><span style={{fontSize:13,fontWeight:600,color:"#dc2626"}}>-${f(e.amount)}</span></div>)}
+        {rebate>0&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:13,color:"#64748b"}}>Rebate ({topL?.name})</span><span style={{fontSize:13,fontWeight:600,color:"#dc2626"}}>-${f(rebate)}</span></div>}
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:13,color:"#64748b"}}>Previous</span><span style={{fontSize:13,color:"#475569",fontWeight:600}}>${f(prevK)}</span></div>
+        <div style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:10,padding:"10px 14px",marginTop:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <span style={{fontSize:13,color:"#16a34a",fontWeight:600}}>Current Kitty</span>
+          <span style={{fontSize:20,fontWeight:800,color:"#16a34a"}}>${f(curK)}</span>
         </div>
-        <div style={{textAlign:"center",marginTop:10,fontSize:11,color:"#334155"}}>Screenshot & share to MPS 🃏</div>
+        <div style={{textAlign:"center",marginTop:10,fontSize:11,color:"#94a3b8"}}>Screenshot & share to MPS 🃏</div>
       </div>
     </div>
   );
@@ -165,10 +165,11 @@ function Leaderboard({history,onClose}){
   useEffect(()=>{if(months.length&&!selMonth)setSelMonth(months[0]);},[months]);
 
   // Build per-player stats from all history
+  const EXCLUDE=["FC","RN"];
   const buildStats=(sessions)=>{
     const map={};
     sessions.forEach(s=>{
-      (s.players||[]).forEach(p=>{
+      (s.players||[]).filter(p=>!EXCLUDE.includes(p.name)).forEach(p=>{
         if(!map[p.name])map[p.name]={name:p.name,sessions:0,wins:0,losses:0,totalNet:0,grossWin:0,grossLoss:0,totalTax:0,totalRebate:0,netHistory:[]};
         const d=map[p.name];
         const pRebate=p.rebate||0;
@@ -193,7 +194,6 @@ function Leaderboard({history,onClose}){
     if(key==="win-desc") return s.sort((a,b)=>b.grossWin-a.grossWin);
     if(key==="loss-asc") return s.sort((a,b)=>a.grossLoss-b.grossLoss);
     if(key==="sess-desc") return s.sort((a,b)=>b.sessions-a.sessions);
-    if(key==="name-asc") return s.sort((a,b)=>a.name.localeCompare(b.name));
     return s;
   };
 
@@ -201,8 +201,9 @@ function Leaderboard({history,onClose}){
   const monthStats=useMemo(()=>sortStats(buildStats(history.filter(h=>h.date.startsWith(selMonth||""))).filter(p=>!filterPlayer||p.name.toLowerCase().includes(filterPlayer.toLowerCase())),sortLB),[history,selMonth,sortLB,filterPlayer]);
 
   const attendance=useMemo(()=>{
+    const EXCL=["FC","RN"];
     const map={};
-    history.forEach(s=>{(s.players||[]).forEach(p=>{map[p.name]=(map[p.name]||0)+1;});});
+    history.forEach(s=>{(s.players||[]).filter(p=>!EXCL.includes(p.name)).forEach(p=>{map[p.name]=(map[p.name]||0)+1;});});
     return Object.entries(map).sort((a,b)=>b[1]-a[1]);
   },[history]);
 
@@ -249,7 +250,7 @@ function Leaderboard({history,onClose}){
         <input value={filterPlayer} onChange={e=>setFilterPlayer(e.target.value)} placeholder="🔍 Filter player..." style={{width:"100%",fontSize:11,padding:"5px 8px",borderRadius:7,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#1e293b",marginBottom:6,boxSizing:"border-box"}}/>
         <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
           <span style={{fontSize:9,color:"#94a3b8",alignSelf:"center"}}>Sort:</span>
-          {[["net-desc","Net ↓"],["net-asc","Net ↑"],["win-desc","Win ↓"],["loss-asc","Loss ↑"],["sess-desc","Sessions ↓"],["name-asc","Name"]].map(([v,l])=>(
+          {[["net-desc","Net ↓"],["net-asc","Net ↑"],["win-desc","Win ↓"],["loss-asc","Loss ↑"],["sess-desc","Sessions ↓"]].map(([v,l])=>(
             <button key={v} onClick={()=>setSortLB(v)} style={{fontSize:9,padding:"2px 7px",borderRadius:5,border:"none",fontWeight:sortLB===v?700:400,background:sortLB===v?"#185fa5":"#e2e8f0",color:sortLB===v?"#fff":"#64748b",cursor:"pointer"}}>{l}</button>
           ))}
         </div>
@@ -282,27 +283,6 @@ function Leaderboard({history,onClose}){
         );})}
       </div>
       {monthStats.length===0?<div style={{textAlign:"center",padding:10,color:"#94a3b8",fontSize:12}}>No data</div>:monthStats.map((p,i)=><StatRow key={p.name} p={p} i={i}/>)}
-
-      {/* ── TREND ── */}
-      <div style={{background:"#1a3a6e",borderRadius:7,padding:"4px 8px",marginBottom:6,marginTop:10}}>
-        <span style={{fontSize:10,fontWeight:700,color:"#93c5fd",letterSpacing:".06em"}}>📈 TREND (2+ sessions)</span>
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-        {allStats.filter(p=>p.sessions>1).map(p=>{
-          const isPos=p.totalNet>=0;
-          return(
-            <div key={p.name} style={{padding:"6px 8px",borderRadius:9,background:"#f8fafc",border:"1px solid #e2e8f0"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:2}}>
-                <span style={{fontSize:11,fontWeight:700,color:"#1e293b"}}>{p.name}</span>
-                <span style={{fontSize:10,fontWeight:700,color:isPos?"#1a7a3e":"#a32d2d"}}>{isPos?"+$":"-$"}{f(Math.abs(p.totalNet))}</span>
-              </div>
-              <Spark values={p.netHistory} color={isPos?"#4ade80":"#f87171"}/>
-              <div style={{fontSize:8,color:"#94a3b8",marginTop:2}}>{p.wins}W {p.losses}L · {p.sessions} sess</div>
-            </div>
-          );
-        })}
-      </div>
-      {allStats.filter(p=>p.sessions>1).length===0&&<div style={{textAlign:"center",padding:10,color:"#94a3b8",fontSize:12}}>Need 2+ sessions</div>}
 
       {/* ── ATTENDANCE ── */}
       <div style={{background:"#1a3a6e",borderRadius:7,padding:"4px 8px",marginBottom:6,marginTop:10}}>
@@ -348,8 +328,9 @@ function YTD({history,onClose}){
   // Per player YTD totals — sorted by net desc
   const ytd=useMemo(()=>{
     const map={};
+    const EXCL_YTD=["FC","RN"];
     sessions.forEach(sess=>{
-      (sess.players||[]).forEach(p=>{
+      (sess.players||[]).filter(p=>!EXCL_YTD.includes(p.name)).forEach(p=>{
         if(!map[p.name])map[p.name]={name:p.name,attend:0,grossWin:0,grossLoss:0,tax:0,rebate:0,net:0,turnover:0};
         const pRebate=p.rebate||0;
         const pWin=p.winnings||0;
@@ -592,9 +573,6 @@ function Hist({history,onClose}){
           <span style={{fontSize:10,color:"#94a3b8",alignSelf:"center"}}>Sort:</span>
           {selBtn("date-desc",sortH,setSortH,"Date ↓")}
           {selBtn("date-asc",sortH,setSortH,"Date ↑")}
-          {selBtn("kitty-desc",sortH,setSortH,"Kitty ↓")}
-          {selBtn("kitty-asc",sortH,setSortH,"Kitty ↑")}
-          {selBtn("players-desc",sortH,setSortH,"Players ↓")}
         </div>
         <div style={{fontSize:11,color:"#94a3b8",marginBottom:8}}>{filtered.length} session{filtered.length!==1?"s":""}</div>
         {filtered.length===0
@@ -602,7 +580,10 @@ function Hist({history,onClose}){
           :filtered.map(s=><div key={s.date} onClick={()=>setSel(s.date)} style={{display:"flex",justifyContent:"space-between",padding:"10px 12px",background:"var(--color-background-secondary)",borderRadius:10,marginBottom:7,cursor:"pointer"}}>
             <div>
               <div style={{fontSize:14,fontWeight:700}}>{lbl(s.date)}</div>
-              <div style={{fontSize:12,color:"var(--color-text-secondary)"}}>{(s.players||[]).length} players · kitty ${f(s.kittyEnd)}{s.topLoser?` · rebate→${s.topLoser}`:""}</div>
+              {(()=>{
+                const netContrib=(s.totTax||0)-(s.rebate||0)-((s.extras||[]).filter(e=>!(e.label||"").toLowerCase().includes("rebate")).reduce((sum,e)=>sum+Number(e.amount||0),0));
+                return <div style={{fontSize:12,color:"var(--color-text-secondary)"}}>{(s.players||[]).length} players · <span style={{color:netContrib>=0?"#1a7a3e":"#a32d2d",fontWeight:600}}>{netContrib>=0?"+":"-"}${f(Math.abs(netContrib))} to kitty</span> · ${f(s.kittyEnd)}</div>;
+              })()}
             </div>
             <span style={{color:"var(--color-text-tertiary)"}}>›</span>
           </div>)
@@ -641,38 +622,42 @@ function Hist({history,onClose}){
           <span style={{fontWeight:700,color:"#1a7a3e"}}>${f(t.amount)}</span>
         </div>)}
 
-        <div style={{fontSize:10,fontWeight:700,color:"#475569",letterSpacing:".08em",marginTop:10,marginBottom:6}}>KITTY</div>
-        <div style={{background:"#f8fafc",borderRadius:10,padding:"10px 12px",border:"1px solid #e2e8f0",marginBottom:8}}>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-            <span style={{fontSize:12,color:"#64748b"}}>Previous kitty</span>
-            <span style={{fontSize:12,fontWeight:600}}>${f(h.prevKitty||0)}</span>
-          </div>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-            <span style={{fontSize:12,color:"#64748b"}}>Tax collected</span>
-            <span style={{fontSize:12,fontWeight:600,color:"#1a7a3e"}}>+${f(h.totTax||0)}</span>
-          </div>
-          {(h.rebate||0)>0&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-            <span style={{fontSize:12,color:"#64748b"}}>Rebate ({h.topLoser||"—"})</span>
-            <span style={{fontSize:12,fontWeight:600,color:"#a32d2d"}}>-${f(h.rebate)}</span>
-          </div>}
-          {(h.extras||[]).length>0&&<>
-            <div style={{fontSize:10,fontWeight:700,color:"#94a3b8",marginTop:6,marginBottom:4,letterSpacing:".06em"}}>EXPENSES</div>
-            {(h.extras||[]).map((e,i)=>(
-              <div key={i} style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                <span style={{fontSize:12,color:"#64748b"}}>{e.label}</span>
-                <span style={{fontSize:12,fontWeight:600,color:"#a32d2d"}}>-${f(e.amount)}</span>
+        <div style={{fontSize:10,fontWeight:700,color:"#475569",letterSpacing:".08em",marginTop:10,marginBottom:6}}>KITTY MOVEMENT</div>
+        {(()=>{
+          const expenses=(h.extras||[]).filter(e=>!(e.label||"").toLowerCase().includes("rebate"));
+          const totExpenses=expenses.reduce((s,e)=>s+Number(e.amount||0),0);
+          const netContrib=(h.totTax||0)-(h.rebate||0)-totExpenses;
+          return(
+            <div style={{background:"#f8fafc",borderRadius:10,padding:"10px 12px",border:"1px solid #e2e8f0",marginBottom:8}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                <span style={{fontSize:12,color:"#64748b"}}>Previous kitty</span>
+                <span style={{fontSize:12,fontWeight:600}}>${f(h.prevKitty||0)}</span>
               </div>
-            ))}
-            <div style={{display:"flex",justifyContent:"space-between",borderTop:"1px dashed #e2e8f0",paddingTop:5,marginTop:4}}>
-              <span style={{fontSize:11,color:"#94a3b8"}}>Total expenses</span>
-              <span style={{fontSize:11,color:"#a32d2d",fontWeight:700}}>-${f(totEx)}</span>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                <span style={{fontSize:12,color:"#64748b"}}>Tax collected</span>
+                <span style={{fontSize:12,fontWeight:600,color:"#1a7a3e"}}>+${f(h.totTax||0)}</span>
+              </div>
+              {(h.rebate||0)>0&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                <span style={{fontSize:12,color:"#64748b"}}>Rebate</span>
+                <span style={{fontSize:12,fontWeight:600,color:"#a32d2d"}}>-${f(h.rebate)}</span>
+              </div>}
+              {expenses.map((e,i)=>(
+                <div key={i} style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                  <span style={{fontSize:12,color:"#64748b"}}>{e.label}</span>
+                  <span style={{fontSize:12,fontWeight:600,color:"#a32d2d"}}>-${f(e.amount)}</span>
+                </div>
+              ))}
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:netContrib>=0?"#d4f7e0":"#fde8e8",borderRadius:8,padding:"8px 10px",marginTop:8}}>
+                <span style={{fontSize:12,fontWeight:700,color:netContrib>=0?"#1a7a3e":"#a32d2d"}}>Net to kitty</span>
+                <span style={{fontSize:15,fontWeight:800,color:netContrib>=0?"#1a7a3e":"#a32d2d"}}>{netContrib>=0?"+":"-"}${f(Math.abs(netContrib))}</span>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",padding:"8px 10px",background:"#1a1a2e",borderRadius:8,marginTop:6}}>
+                <span style={{fontSize:12,color:"#94a3b8",fontWeight:600}}>Closing kitty</span>
+                <span style={{fontSize:16,fontWeight:800,color:"#4ade80"}}>${f(h.kittyEnd)}</span>
+              </div>
             </div>
-          </>}
-        </div>
-        <div style={{display:"flex",justifyContent:"space-between",padding:"10px 14px",background:"#1a1a2e",borderRadius:10}}>
-          <span style={{fontSize:13,color:"#94a3b8",fontWeight:600}}>Closing kitty</span>
-          <span style={{fontSize:18,fontWeight:800,color:"#4ade80"}}>${f(h.kittyEnd)}</span>
-        </div>
+          );
+        })()}
       </>}
     </div>
   );
@@ -686,6 +671,7 @@ export default function App(){
   const[history,setHistory]=useState([]);
   const[view,setView]=useState("game"); // game | hist | board | ytd
   const[playerTab,setPlayerTab]=useState("players"); // players | session
+  const[landscape,setLandscape]=useState(false);
   const[showSum,setShowSum]=useState(false);
   const[extras,setExtras]=useState([]);
   const[newLabel,setNewLabel]=useState("");
@@ -813,10 +799,50 @@ export default function App(){
 
           {/* SESSION TAB — detailed rows */}
           {playerTab==="session"&&<>
+            {sess.length>0&&<div style={{display:'flex',justifyContent:'flex-end',marginBottom:6}}>
+              <button onClick={()=>setLandscape(l=>!l)} style={{fontSize:10,padding:'3px 9px',borderRadius:6,border:'none',background:'#e2e8f0',color:'#475569',cursor:'pointer',fontWeight:600}}>{landscape?'📱 Portrait':'🖥️ Landscape'}</button>
+            </div>}
             {sess.length===0
               ?<div style={{textAlign:"center",padding:"16px 0",color:"#94a3b8",fontSize:13}}>No players in session yet.<br/><span style={{fontSize:12}}>Go to "All" tab to add players</span></div>
               :<>
-                {sess.map(p=>{
+                {landscape
+                  /* ── LANDSCAPE TABLE ── */
+                  ?<div style={{overflowX:'auto'}}>
+                    <table style={{borderCollapse:'collapse',width:'100%',fontSize:12}}>
+                      <thead><tr style={{background:'#1a1a2e'}}>
+                        <th style={{padding:'6px 8px',textAlign:'left',color:'#94a3b8',fontWeight:700,fontSize:10}}>Player</th>
+                        <th style={{padding:'6px 8px',textAlign:'center',color:'#94a3b8',fontWeight:700,fontSize:10}}>Rebuys</th>
+                        <th style={{padding:'6px 8px',textAlign:'right',color:'#94a3b8',fontWeight:700,fontSize:10}}>Buy-in</th>
+                        <th style={{padding:'6px 8px',textAlign:'right',color:'#94a3b8',fontWeight:700,fontSize:10}}>Final Chips</th>
+                        <th style={{padding:'6px 8px',textAlign:'right',color:'#4ade80',fontWeight:700,fontSize:10}}>Winnings</th>
+                        <th style={{padding:'6px 8px',textAlign:'right',color:'#fbbf24',fontWeight:700,fontSize:10}}>Tax</th>
+                        <th style={{padding:'6px 8px',textAlign:'right',color:'#94a3b8',fontWeight:700,fontSize:10}}>Net</th>
+                        <th style={{padding:'6px 8px',textAlign:'center',color:'#94a3b8',fontWeight:700,fontSize:10}}></th>
+                      </tr></thead>
+                      <tbody>{sess.map((p,si)=>{
+                        const c=comp.find(x=>x.name===p.name),w=c?.winnings??0,tx=c?.tax??0,isTop=topL?.name===p.name;
+                        const pNet=w-tx+(isTop?rebate:0);
+                        return(<tr key={p.name} style={{borderBottom:'0.5px solid #e2e8f0',background:isTop?'#fffbeb':si%2===0?'#fff':'#f8fafc'}}>
+                          <td style={{padding:'6px 8px',fontWeight:700,color:'#185fa5'}}>{p.name}{isTop&&rebate>0?<span style={{fontSize:9,background:'#fef3c7',color:'#92400e',borderRadius:3,padding:'1px 4px',marginLeft:4,fontWeight:700}}>R</span>:null}</td>
+                          <td style={{padding:'6px 8px',textAlign:'center'}}>
+                            <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
+                              <button onClick={()=>chgR(p.name,-1)} style={{width:22,height:22,borderRadius:'50%',border:'1px solid #e2e8f0',background:'#f8fafc',fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700}}>−</button>
+                              <span style={{fontWeight:800,minWidth:20,textAlign:'center'}}>{p.rebuys}</span>
+                              <button onClick={()=>chgR(p.name,1)} style={{width:22,height:22,borderRadius:'50%',border:'1px solid #e2e8f0',background:'#f8fafc',fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700}}>+</button>
+                            </div>
+                          </td>
+                          <td style={{padding:'6px 8px',textAlign:'right',fontWeight:600}}>${f(p.rebuys*BUY_IN)}</td>
+                          <td style={{padding:'6px 8px',textAlign:'right'}}><input type='number' value={p.finalChips} onChange={e=>setF(p.name,e.target.value)} placeholder='0' style={{fontSize:12,fontWeight:700,width:80,border:'1px solid #e2e8f0',borderRadius:5,padding:'3px 5px',textAlign:'right',color:'#1e293b'}}/></td>
+                          <td style={{padding:'6px 8px',textAlign:'right',fontWeight:700,color:w>0?'#1a7a3e':w<0?'#a32d2d':'#94a3b8'}}>{w===0?'—':(w>0?'+':'')+f(w)}</td>
+                          <td style={{padding:'6px 8px',textAlign:'right',color:'#ba7517'}}>{tx>0?f(tx):''}</td>
+                          <td style={{padding:'6px 8px',textAlign:'right',fontWeight:800,color:pNet>0?'#1a7a3e':pNet<0?'#a32d2d':'#94a3b8'}}>{pNet===0?'—':(pNet>0?'+':'')+f(pNet)}</td>
+                          <td style={{padding:'6px 8px',textAlign:'center'}}><button onClick={()=>tog(p.name)} style={{fontSize:10,padding:'2px 6px',borderRadius:5,border:'1px solid #fca5a5',background:'#fef2f2',color:'#dc2626',cursor:'pointer'}}>✕</button></td>
+                        </tr>);
+                      })}</tbody>
+                    </table>
+                  </div>
+                  /* ── PORTRAIT CARDS ── */
+                  :<>{sess.map(p=>{
                   const c=comp.find(x=>x.name===p.name),w=c?.winnings??0,tx=c?.tax??0,isTop=topL?.name===p.name;
                   return(<div key={p.name} style={{marginBottom:6,borderRadius:10,border:isTop?"1.5px solid #fbbf24":"1px solid #e2e8f0",padding:"8px 10px",background:isTop?"#fffbeb":"#fff"}}>
                     <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -834,7 +860,7 @@ export default function App(){
                       <div style={{flex:1,background:w>0?"#d4f7e0":w<0?"#fde8e8":"#f8fafc",borderRadius:8,padding:"5px 8px"}}><div style={{fontSize:10,color:"#94a3b8"}}>Winnings</div><div style={{fontSize:14,fontWeight:700,color:w>0?"#1a7a3e":w<0?"#a32d2d":"#94a3b8"}}>{w>0?"+":""}{f(w)}</div>{tx>0&&<div style={{fontSize:9,color:"#ba7517"}}>tax ${f(tx)}</div>}</div>
                     </div>
                   </div>);
-                })}
+                })}</>}
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginTop:6}}>
                   {[{l:"Losses",v:"$"+f(totL),c:"#a32d2d"},{l:"Winnings",v:"$"+f(totW),c:"#1a7a3e"},{l:"Tally",v:tally?"OK":"Off",c:tally?"#1a7a3e":"#a32d2d"},{l:"Tax",v:"$"+f(totTax),c:"#ba7517"}].map(x=>(
                     <div key={x.l} style={{background:"#f8fafc",borderRadius:8,padding:"7px 8px",border:"1px solid #e2e8f0"}}><div style={{fontSize:10,color:"#94a3b8",marginBottom:2}}>{x.l}</div><div style={{fontSize:13,fontWeight:700,color:x.c}}>{x.v}</div></div>
