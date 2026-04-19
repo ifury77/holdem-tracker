@@ -212,22 +212,43 @@ function Leaderboard({history,onClose}){
         stats.length===0
           ?<div style={{textAlign:"center",padding:20,color:"#94a3b8"}}>No data yet</div>
           :<div>
-            {stats.map((p,i)=>(
-              <div key={p.name} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:10,
-                background:i===0?"#0d2818":i===1?"#1a1a2e":i===2?"#1a1800":"#f8fafc",marginBottom:6,
-                border:`1px solid ${i===0?"#14532d":i===1?"#1e293b":i===2?"#713f12":"#e2e8f0"}`}}>
-                <div style={{fontSize:i<3?18:12,minWidth:26,color:i<3?"inherit":"#94a3b8",fontWeight:700,textAlign:"center"}}>{medal(i)}</div>
-                <div style={{width:32,height:32,borderRadius:"50%",background:p.totalNet>0?"#14532d":p.totalNet<0?"#2d1a1a":"#e2e8f0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:p.totalNet>0?"#4ade80":p.totalNet<0?"#f87171":"#64748b",flexShrink:0}}>{p.name}</div>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:13,fontWeight:700,color:i<3?"#fff":"#1e293b"}}>{p.name}</div>
-                  <div style={{fontSize:11,color:"#94a3b8"}}>{p.sessions} sessions · {p.wins}W {p.losses}L</div>
+            {/* Column headers */}
+            <div style={{display:"flex",alignItems:"center",gap:6,padding:"4px 10px",marginBottom:4}}>
+              <div style={{width:26}}/>
+              <div style={{width:32}}/>
+              <div style={{flex:1}}/>
+              <div style={{width:72,textAlign:"right",fontSize:10,fontWeight:700,color:"#4ade80",letterSpacing:".04em"}}>WIN</div>
+              <div style={{width:72,textAlign:"right",fontSize:10,fontWeight:700,color:"#f87171",letterSpacing:".04em"}}>LOSS</div>
+              <div style={{width:80,textAlign:"right",fontSize:10,fontWeight:700,color:"#94a3b8",letterSpacing:".04em"}}>NET</div>
+            </div>
+            {stats.map((p,i)=>{
+              const totalWin=p.netHistory.filter(n=>n>0).reduce((s,n)=>s+n,0);
+              const totalLoss=p.netHistory.filter(n=>n<0).reduce((s,n)=>s+n,0);
+              return(
+                <div key={p.name} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 10px",borderRadius:10,
+                  background:i===0?"#0d2818":i===1?"#1a1a2e":i===2?"#1a1800":"#f8fafc",marginBottom:6,
+                  border:`1px solid ${i===0?"#14532d":i===1?"#1e293b":i===2?"#713f12":"#e2e8f0"}`}}>
+                  <div style={{fontSize:i<3?16:11,minWidth:26,color:i<3?"inherit":"#94a3b8",fontWeight:700,textAlign:"center"}}>{medal(i)}</div>
+                  <div style={{width:32,height:32,borderRadius:"50%",background:p.totalNet>0?"#14532d":p.totalNet<0?"#2d1a1a":"#334155",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:p.totalNet>0?"#4ade80":p.totalNet<0?"#f87171":"#94a3b8",flexShrink:0}}>{p.name}</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:12,fontWeight:700,color:i<3?"#fff":"#1e293b"}}>{p.name}</div>
+                    <div style={{fontSize:10,color:"#64748b"}}>{p.sessions} sess</div>
+                  </div>
+                  <div style={{width:72,textAlign:"right"}}>
+                    <div style={{fontSize:12,fontWeight:700,color:"#4ade80"}}>+${f(totalWin)}</div>
+                    <div style={{fontSize:9,color:"#64748b"}}>{p.wins}W</div>
+                  </div>
+                  <div style={{width:72,textAlign:"right"}}>
+                    <div style={{fontSize:12,fontWeight:700,color:"#f87171"}}>-${f(Math.abs(totalLoss))}</div>
+                    <div style={{fontSize:9,color:"#64748b"}}>{p.losses}L</div>
+                  </div>
+                  <div style={{width:80,textAlign:"right"}}>
+                    <div style={{fontSize:13,fontWeight:800,color:p.totalNet>0?"#4ade80":p.totalNet<0?"#f87171":"#94a3b8"}}>{p.totalNet>=0?"+$":"-$"}{f(Math.abs(p.totalNet))}</div>
+                    <div style={{fontSize:9,color:"#64748b"}}>avg {p.totalNet>=0?"+":"-"}${f(Math.abs(Math.round(p.totalNet/p.sessions)))}</div>
+                  </div>
                 </div>
-                <div style={{textAlign:"right"}}>
-                  <div style={{fontSize:14,fontWeight:800,color:p.totalNet>0?"#4ade80":p.totalNet<0?"#f87171":"#94a3b8"}}>{p.totalNet>=0?"+$":"−$"}{f(Math.abs(p.totalNet))}</div>
-                  <div style={{fontSize:10,color:"#64748b"}}>avg {p.totalNet>=0?"+":"-"}${f(Math.abs(Math.round(p.totalNet/p.sessions)))}</div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
       )}
 
