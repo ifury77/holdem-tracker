@@ -162,21 +162,19 @@ function Leaderboard({history,onClose}){
       (s.players||[]).forEach(p=>{
         if(!map[p.name])map[p.name]={name:p.name,sessions:0,wins:0,losses:0,totalNet:0,grossWin:0,grossLoss:0,totalTax:0,totalRebate:0,netHistory:[],dates:[]};
         const d=map[p.name];
+        const pRebate=p.rebate||0;
+        const pNet=(p.winnings||0)-(p.tax||0)+pRebate;
         d.sessions++;
-        d.totalNet+=p.net||0;
-        d.grossWin+=p.winnings>0?p.winnings:0;
-        d.grossLoss+=p.winnings<0?p.winnings:0;
+        d.totalNet+=pNet;
+        d.grossWin+=(p.winnings||0)>0?(p.winnings||0):0;
+        d.grossLoss+=(p.winnings||0)<0?(p.winnings||0):0;
         d.totalTax+=p.tax||0;
-        d.netHistory.push(p.net||0);
+        d.totalRebate+=pRebate;
+        d.netHistory.push(pNet);
         d.dates.push(s.date);
-        if((p.net||0)>0)d.wins++;
-        else if((p.net||0)<0)d.losses++;
+        if(pNet>0)d.wins++;
+        else if(pNet<0)d.losses++;
       });
-      // Attribute rebate to top loser if stored
-      if(s.rebate&&s.rebate>0){
-        const topLoser=(s.players||[]).reduce((a,b)=>(a.winnings||0)<(b.winnings||0)?a:b,{});
-        if(topLoser.name&&map[topLoser.name])map[topLoser.name].totalRebate+=s.rebate;
-      }
     });
     return Object.values(map).sort((a,b)=>b.totalNet-a.totalNet);
   },[history]);
@@ -187,16 +185,19 @@ function Leaderboard({history,onClose}){
     const map={};
     filtered.forEach(s=>{
       (s.players||[]).forEach(p=>{
-        if(!map[p.name])map[p.name]={name:p.name,sessions:0,wins:0,losses:0,totalNet:0,grossWin:0,grossLoss:0,totalTax:0,netHistory:[]};
+        if(!map[p.name])map[p.name]={name:p.name,sessions:0,wins:0,losses:0,totalNet:0,grossWin:0,grossLoss:0,totalTax:0,totalRebate:0,netHistory:[]};
         const d=map[p.name];
+        const pRebate=p.rebate||0;
+        const pNet=(p.winnings||0)-(p.tax||0)+pRebate;
         d.sessions++;
-        d.totalNet+=p.net||0;
-        d.grossWin+=p.winnings>0?p.winnings:0;
-        d.grossLoss+=p.winnings<0?p.winnings:0;
+        d.totalNet+=pNet;
+        d.grossWin+=(p.winnings||0)>0?(p.winnings||0):0;
+        d.grossLoss+=(p.winnings||0)<0?(p.winnings||0):0;
         d.totalTax+=p.tax||0;
-        d.netHistory.push(p.net||0);
-        if((p.net||0)>0)d.wins++;
-        else if((p.net||0)<0)d.losses++;
+        d.totalRebate+=pRebate;
+        d.netHistory.push(pNet);
+        if(pNet>0)d.wins++;
+        else if(pNet<0)d.losses++;
       });
     });
     return Object.values(map).sort((a,b)=>b.totalNet-a.totalNet);
@@ -230,7 +231,7 @@ function Leaderboard({history,onClose}){
             <div style={{width:32,height:32,borderRadius:"50%",background:p.totalNet>0?"#14532d":p.totalNet<0?"#2d1a1a":"#334155",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:p.totalNet>0?"#4ade80":p.totalNet<0?"#f87171":"#94a3b8"}}>{p.name}</div>
             <div>
               <div style={{fontSize:11,fontWeight:700,color:i<3?"#fff":"#1e293b"}}>{p.name}</div>
-              <div style={{fontSize:9,color:"#64748b"}}>{p.sessions}s · {p.wins}W {p.losses}L{p.totalTax>0?` · tax $${f(p.totalTax)}`:""}</div>
+              <div style={{fontSize:9,color:"#64748b"}}>{p.sessions}s · {p.wins}W {p.losses}L{p.totalTax>0?` · tax $${f(p.totalTax)}`:""}{p.totalRebate>0?` · rebate +$${f(p.totalRebate)}`:""}</div>
             </div>
             <div style={{textAlign:"right"}}>
               <div style={{fontSize:11,fontWeight:700,color:"#4ade80"}}>+${f(p.grossWin)}</div>
@@ -457,12 +458,19 @@ export default function App(){
   const totTax=comp.reduce((s,p)=>s+p.tax,0);
   const tally=sess.length>0&&totW+totL===0;
   const totEx=extras.reduce((s,e)=>s+Number(e.amount||0),0);
-  const curK=prevK+totTax-totEx;
+  const topL=comp.length?comp.reduce((a,b)=>a.winnings<b.winnings?a:b):null;
+  const rebate=topL&&topL.winnings<0?Math.round(Math.abs(topL.winnings)*.1):0;
+  const curK=prevK+totTax-totEx-rebate;
   const stl=useMemo(()=>mkSettle(comp),[comp]);
 
   const save=async()=>{
     setSaving(true);
-    const entry={date,kittyEnd:curK,players:comp.map(p=>({name:p.name,rebuys:p.rebuys,finalChips:p.chips,winnings:p.winnings,tax:p.tax,net:p.net})),settlement:stl,extras:extras.map(e=>({...e})),totTax,prevKitty:prevK};
+    const entry={date,kittyEnd:curK,rebate,topLoser:topL?.name||null,
+      players:comp.map(p=>({name:p.name,rebuys:p.rebuys,finalChips:p.chips,winnings:p.winnings,tax:p.tax,
+        rebate:p.name===topL?.name?rebate:0,
+        net:p.name===topL?.name?(p.winnings-p.tax+rebate):(p.winnings-p.tax)
+      })),
+      settlement:stl,extras:extras.map(e=>({...e})),totTax,prevKitty:prevK};
     try{await setDoc(doc(db,"sessions",date),entry);}
     catch(e){alert("Save failed: "+e.message);}
     setSaving(false);
@@ -549,7 +557,7 @@ export default function App(){
 
       <div style={card}>
         <div style={{fontSize:15,fontWeight:700,marginBottom:10}}>🏦 Kitty</div>
-        {[{l:"Previous kitty",v:"$"+f(prevK)},{l:"Tax collected",v:"+$"+f(totTax),c:"#1a7a3e"},...extras.map(e=>({l:e.label,v:"-$"+f(e.amount),c:"#a32d2d"}))].map((r,i)=>(
+        {[{l:"Previous kitty",v:"$"+f(prevK)},{l:"Tax collected",v:"+$"+f(totTax),c:"#1a7a3e"},...extras.map(e=>({l:e.label,v:"-$"+f(e.amount),c:"#a32d2d"})),{l:`Rebate (${topL?.name||"—"})`,v:rebate>0?"-$"+f(rebate):"—",c:rebate>0?"#a32d2d":"#94a3b8"}].map((r,i)=>(
           <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 10px",background:"#f8fafc",borderRadius:8,marginBottom:5,border:"1px solid #e2e8f0"}}>
             <span style={{fontSize:13,color:"#64748b"}}>{r.l}</span><span style={{fontSize:14,fontWeight:600,color:r.c||"#1e293b"}}>{r.v}</span>
           </div>
