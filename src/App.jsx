@@ -666,6 +666,8 @@ function Hist({history,onClose}){
 // ── MAIN APP ──────────────────────────────────────────────────────
 // Unique device ID so we don't echo our own writes back
 const _deviceId=Math.random().toString(36).slice(2);
+// Stable reference to live doc — must be outside component
+const _liveRef=doc(db,"live","current");
 
 export default function App(){
   const td=new Date().toISOString().split("T")[0];
@@ -697,31 +699,33 @@ export default function App(){
   // ── Live game state sync ──────────────────────────────────────────
   // Writes current game state to Firestore "live/current" doc on every change
   // All devices read from it in real time
-  const liveRef=doc(db,"live","current");
 
   useEffect(()=>{
-    const unsub=onSnapshot(liveRef,(snap)=>{
-      if(!snap.exists())return;
+    console.log("🔴 Subscribing to live doc, deviceId:", _deviceId);
+    const unsub=onSnapshot(_liveRef,(snap)=>{
+      if(!snap.exists()){console.log("📭 Live doc empty");return;}
       const d=snap.data();
+      console.log("📡 Live update from:", d._source, "my id:", _deviceId);
       // Only apply if from another device (avoid overwriting local edits)
-      if(d._source===_deviceId)return;
+      if(d._source===_deviceId){console.log("🔄 Ignoring own write");return;}
+      console.log("✅ Applying remote state:", d.players?.filter(p=>p.inSession).map(p=>p.name));
       setDate(d.date||new Date().toISOString().split("T")[0]);
       setPlayers(d.players||NAMES.map(n=>({name:n,inSession:false,rebuys:0,finalChips:""})));
       setExtras(d.extras||[]);
-    });
+    },(err)=>{console.error("❌ Live listener error:",err);});
     return()=>unsub();
   },[]);
 
   // Debounce live writes — push state to Firestore 800ms after last change
   useEffect(()=>{
     const t=setTimeout(()=>{
-      setDoc(liveRef,{
+      setDoc(_liveRef,{
         date,
         players,
         extras,
         _source:_deviceId,
         _ts:Date.now()
-      }).catch(()=>{});
+      }).catch((e)=>{console.error("Live write failed:",e);});
     },800);
     return()=>clearTimeout(t);
   },[date,players,extras]);
@@ -774,7 +778,7 @@ export default function App(){
     setExtras([]);setConfirmNew(false);setShowSum(false);
     setDate(nd);
     // Push cleared state to live doc immediately
-    setDoc(doc(db,"live","current"),{date:nd,players:freshPlayers,extras:[],_source:_deviceId,_ts:Date.now()}).catch(()=>{});
+    setDoc(_liveRef,{date:nd,players:freshPlayers,extras:[],_source:_deviceId,_ts:Date.now()}).catch(()=>{});
   };
 
   const navBtn=(v,label)=>(
