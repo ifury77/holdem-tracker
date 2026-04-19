@@ -146,7 +146,6 @@ function Spark({values,color}){
 }
 
 function Leaderboard({history,onClose}){
-  const[tab,setTab]=useState("overall");
   const[selMonth,setSelMonth]=useState(null);
 
   const months=useMemo(()=>{
@@ -156,24 +155,52 @@ function Leaderboard({history,onClose}){
 
   useEffect(()=>{if(months.length&&!selMonth)setSelMonth(months[0]);},[months]);
 
-  const sessions=useMemo(()=>
-    tab==="monthly"?history.filter(h=>h.date.startsWith(selMonth||"")):history
-  ,[history,tab,selMonth]);
-
-  const stats=useMemo(()=>{
+  // All-time stats per player
+  const allStats=useMemo(()=>{
     const map={};
-    sessions.forEach(s=>{
+    history.forEach(s=>{
       (s.players||[]).forEach(p=>{
-        if(!map[p.name])map[p.name]={name:p.name,sessions:0,wins:0,losses:0,totalNet:0,netHistory:[]};
-        map[p.name].sessions++;
-        map[p.name].totalNet+=p.net||0;
-        map[p.name].netHistory.push(p.net||0);
-        if((p.net||0)>0)map[p.name].wins++;
-        else if((p.net||0)<0)map[p.name].losses++;
+        if(!map[p.name])map[p.name]={name:p.name,sessions:0,wins:0,losses:0,totalNet:0,grossWin:0,grossLoss:0,totalTax:0,totalRebate:0,netHistory:[],dates:[]};
+        const d=map[p.name];
+        d.sessions++;
+        d.totalNet+=p.net||0;
+        d.grossWin+=p.winnings>0?p.winnings:0;
+        d.grossLoss+=p.winnings<0?p.winnings:0;
+        d.totalTax+=p.tax||0;
+        d.netHistory.push(p.net||0);
+        d.dates.push(s.date);
+        if((p.net||0)>0)d.wins++;
+        else if((p.net||0)<0)d.losses++;
+      });
+      // Attribute rebate to top loser if stored
+      if(s.rebate&&s.rebate>0){
+        const topLoser=(s.players||[]).reduce((a,b)=>(a.winnings||0)<(b.winnings||0)?a:b,{});
+        if(topLoser.name&&map[topLoser.name])map[topLoser.name].totalRebate+=s.rebate;
+      }
+    });
+    return Object.values(map).sort((a,b)=>b.totalNet-a.totalNet);
+  },[history]);
+
+  // Monthly stats per player
+  const monthStats=useMemo(()=>{
+    const filtered=history.filter(h=>h.date.startsWith(selMonth||""));
+    const map={};
+    filtered.forEach(s=>{
+      (s.players||[]).forEach(p=>{
+        if(!map[p.name])map[p.name]={name:p.name,sessions:0,wins:0,losses:0,totalNet:0,grossWin:0,grossLoss:0,totalTax:0,netHistory:[]};
+        const d=map[p.name];
+        d.sessions++;
+        d.totalNet+=p.net||0;
+        d.grossWin+=p.winnings>0?p.winnings:0;
+        d.grossLoss+=p.winnings<0?p.winnings:0;
+        d.totalTax+=p.tax||0;
+        d.netHistory.push(p.net||0);
+        if((p.net||0)>0)d.wins++;
+        else if((p.net||0)<0)d.losses++;
       });
     });
     return Object.values(map).sort((a,b)=>b.totalNet-a.totalNet);
-  },[sessions]);
+  },[history,selMonth]);
 
   const attendance=useMemo(()=>{
     const map={};
@@ -181,125 +208,122 @@ function Leaderboard({history,onClose}){
     return Object.entries(map).sort((a,b)=>b[1]-a[1]);
   },[history]);
 
-  const tabBtn=(t,label)=>(
-    <button onClick={()=>setTab(t)} style={{flex:1,fontSize:11,padding:"5px 4px",borderRadius:8,border:"none",fontWeight:tab===t?700:400,background:tab===t?"#1a7a3e":"transparent",color:tab===t?"#fff":"#94a3b8",cursor:"pointer"}}>{label}</button>
-  );
   const medal=(i)=>i===0?"🥇":i===1?"🥈":i===2?"🥉":`#${i+1}`;
+
+  const StatsTable=({stats,dark})=>(
+    stats.length===0
+      ?<div style={{textAlign:"center",padding:16,color:"#94a3b8",fontSize:13}}>No data yet</div>
+      :<div>
+        {/* Header row */}
+        <div style={{display:"grid",gridTemplateColumns:"20px 32px 1fr 68px 68px 72px",gap:4,padding:"4px 8px",marginBottom:4,alignItems:"center"}}>
+          <div/><div/>
+          <div style={{fontSize:9,fontWeight:700,color:"#64748b",letterSpacing:".06em"}}>PLAYER</div>
+          <div style={{fontSize:9,fontWeight:700,color:"#4ade80",textAlign:"right",letterSpacing:".06em"}}>GROSS W</div>
+          <div style={{fontSize:9,fontWeight:700,color:"#f87171",textAlign:"right",letterSpacing:".06em"}}>GROSS L</div>
+          <div style={{fontSize:9,fontWeight:700,color:"#94a3b8",textAlign:"right",letterSpacing:".06em"}}>NET</div>
+        </div>
+        {stats.map((p,i)=>(
+          <div key={p.name} style={{display:"grid",gridTemplateColumns:"20px 32px 1fr 68px 68px 72px",gap:4,padding:"7px 8px",borderRadius:10,alignItems:"center",
+            background:i===0?"#0d2818":i===1?"#1a1a2e":i===2?"#1a1800":"#f8fafc",marginBottom:5,
+            border:`1px solid ${i===0?"#14532d":i===1?"#1e293b":i===2?"#713f12":"#e2e8f0"}`}}>
+            <div style={{fontSize:i<3?13:10,fontWeight:700,color:i<3?"inherit":"#94a3b8",textAlign:"center"}}>{medal(i)}</div>
+            <div style={{width:32,height:32,borderRadius:"50%",background:p.totalNet>0?"#14532d":p.totalNet<0?"#2d1a1a":"#334155",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:p.totalNet>0?"#4ade80":p.totalNet<0?"#f87171":"#94a3b8"}}>{p.name}</div>
+            <div>
+              <div style={{fontSize:11,fontWeight:700,color:i<3?"#fff":"#1e293b"}}>{p.name}</div>
+              <div style={{fontSize:9,color:"#64748b"}}>{p.sessions}s · {p.wins}W {p.losses}L{p.totalTax>0?` · tax $${f(p.totalTax)}`:""}</div>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:11,fontWeight:700,color:"#4ade80"}}>+${f(p.grossWin)}</div>
+              <div style={{fontSize:8,color:"#64748b"}}>{p.wins} wins</div>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:11,fontWeight:700,color:"#f87171"}}>-${f(Math.abs(p.grossLoss))}</div>
+              <div style={{fontSize:8,color:"#64748b"}}>{p.losses} loss</div>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:12,fontWeight:800,color:p.totalNet>0?"#4ade80":p.totalNet<0?"#f87171":"#94a3b8"}}>{p.totalNet>=0?"+$":"-$"}{f(Math.abs(p.totalNet))}</div>
+              <div style={{fontSize:8,color:"#64748b"}}>avg {p.totalNet>=0?"+":"-"}${f(Math.abs(Math.round(p.totalNet/(p.sessions||1))))}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+  );
 
   return(
     <div style={{...card,marginBottom:12}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
         <span style={{fontSize:15,fontWeight:700}}>🏆 Leaderboard</span>
         <button onClick={onClose} style={{fontSize:13,padding:"3px 10px",borderRadius:8,border:"0.5px solid var(--color-border-tertiary)",background:"var(--color-background-secondary)",cursor:"pointer"}}>Close</button>
       </div>
 
-      <div style={{display:"flex",background:"#f1f5f9",borderRadius:10,padding:3,gap:2,marginBottom:12}}>
-        {tabBtn("overall","Overall")}
-        {tabBtn("monthly","Monthly")}
-        {tabBtn("trend","Trend")}
-        {tabBtn("attendance","Attend")}
+      {/* ── OVERALL ── */}
+      <div style={{marginBottom:18}}>
+        <div style={{fontSize:12,fontWeight:700,color:"#fff",background:"#1a3a6e",borderRadius:8,padding:"5px 10px",marginBottom:8,letterSpacing:".06em"}}>📊 OVERALL ALL-TIME</div>
+        <StatsTable stats={allStats}/>
       </div>
 
-      {tab==="monthly"&&<div style={{display:"flex",gap:6,marginBottom:12,overflowX:"auto",paddingBottom:4}}>
-        {months.map(m=>{const[y,mo]=m.split("-");return(
-          <button key={m} onClick={()=>setSelMonth(m)} style={{flexShrink:0,fontSize:12,padding:"4px 10px",borderRadius:8,border:"none",fontWeight:selMonth===m?700:400,background:selMonth===m?"#1a3a6e":"#e2e8f0",color:selMonth===m?"#fff":"#64748b",cursor:"pointer"}}>
-            {MON[+mo-1]} {y.slice(2)}
-          </button>
-        );})}
-      </div>}
+      {/* ── MONTHLY ── */}
+      <div style={{marginBottom:18}}>
+        <div style={{fontSize:12,fontWeight:700,color:"#fff",background:"#1a3a6e",borderRadius:8,padding:"5px 10px",marginBottom:8,letterSpacing:".06em"}}>📅 MONTHLY</div>
+        <div style={{display:"flex",gap:6,marginBottom:10,overflowX:"auto",paddingBottom:4}}>
+          {months.map(m=>{const[y,mo]=m.split("-");return(
+            <button key={m} onClick={()=>setSelMonth(m)} style={{flexShrink:0,fontSize:11,padding:"4px 10px",borderRadius:8,border:"none",fontWeight:selMonth===m?700:400,background:selMonth===m?"#185fa5":"#e2e8f0",color:selMonth===m?"#fff":"#64748b",cursor:"pointer"}}>
+              {MON[+mo-1]} {y.slice(2)}
+            </button>
+          );})}
+        </div>
+        <StatsTable stats={monthStats}/>
+      </div>
 
-      {(tab==="overall"||tab==="monthly")&&(
-        stats.length===0
-          ?<div style={{textAlign:"center",padding:20,color:"#94a3b8"}}>No data yet</div>
-          :<div>
-            {/* Column headers */}
-            <div style={{display:"flex",alignItems:"center",gap:6,padding:"4px 10px",marginBottom:4}}>
-              <div style={{width:26}}/>
-              <div style={{width:32}}/>
-              <div style={{flex:1}}/>
-              <div style={{width:72,textAlign:"right",fontSize:10,fontWeight:700,color:"#4ade80",letterSpacing:".04em"}}>WIN</div>
-              <div style={{width:72,textAlign:"right",fontSize:10,fontWeight:700,color:"#f87171",letterSpacing:".04em"}}>LOSS</div>
-              <div style={{width:80,textAlign:"right",fontSize:10,fontWeight:700,color:"#94a3b8",letterSpacing:".04em"}}>NET</div>
+      {/* ── TREND ── */}
+      <div style={{marginBottom:18}}>
+        <div style={{fontSize:12,fontWeight:700,color:"#fff",background:"#1a3a6e",borderRadius:8,padding:"5px 10px",marginBottom:8,letterSpacing:".06em"}}>📈 WIN/LOSS TREND</div>
+        <div style={{fontSize:11,color:"#64748b",marginBottom:8}}>Net per session sparkline (players with 2+ sessions)</div>
+        {allStats.filter(p=>p.sessions>1).map(p=>{
+          const isPos=p.totalNet>=0;
+          return(
+            <div key={p.name} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",borderRadius:10,background:"#f8fafc",border:"1px solid #e2e8f0",marginBottom:6}}>
+              <div style={{width:30,height:30,borderRadius:"50%",background:isPos?"#14532d":"#2d1a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:isPos?"#4ade80":"#f87171",flexShrink:0}}>{p.name}</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:11,fontWeight:700,marginBottom:2,color:"#1e293b"}}>{p.name} <span style={{fontWeight:400,color:"#94a3b8"}}>{p.wins}W {p.losses}L</span></div>
+                <Spark values={p.netHistory} color={isPos?"#4ade80":"#f87171"}/>
+              </div>
+              <div style={{textAlign:"right"}}>
+                <div style={{fontSize:12,fontWeight:800,color:isPos?"#1a7a3e":"#a32d2d"}}>{isPos?"+$":"-$"}{f(Math.abs(p.totalNet))}</div>
+                <div style={{fontSize:9,color:"#94a3b8"}}>{p.sessions} sess</div>
+              </div>
             </div>
-            {stats.map((p,i)=>{
-              const totalWin=p.netHistory.filter(n=>n>0).reduce((s,n)=>s+n,0);
-              const totalLoss=p.netHistory.filter(n=>n<0).reduce((s,n)=>s+n,0);
-              return(
-                <div key={p.name} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 10px",borderRadius:10,
-                  background:i===0?"#0d2818":i===1?"#1a1a2e":i===2?"#1a1800":"#f8fafc",marginBottom:6,
-                  border:`1px solid ${i===0?"#14532d":i===1?"#1e293b":i===2?"#713f12":"#e2e8f0"}`}}>
-                  <div style={{fontSize:i<3?16:11,minWidth:26,color:i<3?"inherit":"#94a3b8",fontWeight:700,textAlign:"center"}}>{medal(i)}</div>
-                  <div style={{width:32,height:32,borderRadius:"50%",background:p.totalNet>0?"#14532d":p.totalNet<0?"#2d1a1a":"#334155",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:p.totalNet>0?"#4ade80":p.totalNet<0?"#f87171":"#94a3b8",flexShrink:0}}>{p.name}</div>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:12,fontWeight:700,color:i<3?"#fff":"#1e293b"}}>{p.name}</div>
-                    <div style={{fontSize:10,color:"#64748b"}}>{p.sessions} sess</div>
-                  </div>
-                  <div style={{width:72,textAlign:"right"}}>
-                    <div style={{fontSize:12,fontWeight:700,color:"#4ade80"}}>+${f(totalWin)}</div>
-                    <div style={{fontSize:9,color:"#64748b"}}>{p.wins}W</div>
-                  </div>
-                  <div style={{width:72,textAlign:"right"}}>
-                    <div style={{fontSize:12,fontWeight:700,color:"#f87171"}}>-${f(Math.abs(totalLoss))}</div>
-                    <div style={{fontSize:9,color:"#64748b"}}>{p.losses}L</div>
-                  </div>
-                  <div style={{width:80,textAlign:"right"}}>
-                    <div style={{fontSize:13,fontWeight:800,color:p.totalNet>0?"#4ade80":p.totalNet<0?"#f87171":"#94a3b8"}}>{p.totalNet>=0?"+$":"-$"}{f(Math.abs(p.totalNet))}</div>
-                    <div style={{fontSize:9,color:"#64748b"}}>avg {p.totalNet>=0?"+":"-"}${f(Math.abs(Math.round(p.totalNet/p.sessions)))}</div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-      )}
+          );
+        })}
+        {allStats.filter(p=>p.sessions>1).length===0&&<div style={{textAlign:"center",padding:12,color:"#94a3b8",fontSize:13}}>Need 2+ sessions for trend</div>}
+      </div>
 
-      {tab==="trend"&&(
-        <div>
-          <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>Net per session sparkline</div>
-          {stats.filter(p=>p.sessions>1).map(p=>{
-            const isPos=p.totalNet>=0;
-            return(
-              <div key={p.name} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",borderRadius:10,background:"#f8fafc",border:"1px solid #e2e8f0",marginBottom:6}}>
-                <div style={{width:30,height:30,borderRadius:"50%",background:isPos?"#14532d":"#2d1a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:isPos?"#4ade80":"#f87171",flexShrink:0}}>{p.name}</div>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:12,fontWeight:700,marginBottom:2}}>{p.name}</div>
-                  <Spark values={p.netHistory} color={isPos?"#4ade80":"#f87171"}/>
+      {/* ── ATTENDANCE ── */}
+      <div>
+        <div style={{fontSize:12,fontWeight:700,color:"#fff",background:"#1a3a6e",borderRadius:8,padding:"5px 10px",marginBottom:8,letterSpacing:".06em"}}>🎯 ATTENDANCE</div>
+        <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>Sessions attended out of {history.length} total</div>
+        {attendance.map(([name,count])=>{
+          const pct=Math.round((count/history.length)*100);
+          return(
+            <div key={name} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+              <div style={{width:28,height:28,borderRadius:"50%",background:"#e8f4fd",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#185fa5",flexShrink:0}}>{name}</div>
+              <div style={{flex:1}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+                  <span style={{fontSize:12,fontWeight:700}}>{name}</span>
+                  <span style={{fontSize:11,color:"#64748b"}}>{count}/{history.length} ({pct}%)</span>
                 </div>
-                <div style={{textAlign:"right"}}>
-                  <div style={{fontSize:13,fontWeight:800,color:isPos?"#1a7a3e":"#a32d2d"}}>{isPos?"+$":"−$"}{f(Math.abs(p.totalNet))}</div>
-                  <div style={{fontSize:10,color:"#94a3b8"}}>{p.wins}W {p.losses}L</div>
+                <div style={{height:6,background:"#e2e8f0",borderRadius:3,overflow:"hidden"}}>
+                  <div style={{height:"100%",width:`${pct}%`,background:pct>=80?"#4ade80":pct>=50?"#facc15":"#f87171",borderRadius:3}}/>
                 </div>
               </div>
-            );
-          })}
-          {stats.filter(p=>p.sessions<=1).length>0&&<div style={{fontSize:11,color:"#94a3b8",textAlign:"center",marginTop:8}}>Players with only 1 session not shown</div>}
-        </div>
-      )}
-
-      {tab==="attendance"&&(
-        <div>
-          <div style={{fontSize:11,color:"#64748b",marginBottom:10}}>Sessions attended out of {history.length} total</div>
-          {attendance.map(([name,count])=>{
-            const pct=Math.round((count/history.length)*100);
-            return(
-              <div key={name} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-                <div style={{width:28,height:28,borderRadius:"50%",background:"#e8f4fd",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#185fa5",flexShrink:0}}>{name}</div>
-                <div style={{flex:1}}>
-                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
-                    <span style={{fontSize:12,fontWeight:700}}>{name}</span>
-                    <span style={{fontSize:12,color:"#64748b"}}>{count}/{history.length} ({pct}%)</span>
-                  </div>
-                  <div style={{height:6,background:"#e2e8f0",borderRadius:3,overflow:"hidden"}}>
-                    <div style={{height:"100%",width:`${pct}%`,background:pct>=80?"#4ade80":pct>=50?"#facc15":"#f87171",borderRadius:3}}/>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
+
 
 function Hist({history,onClose}){
   const[sel,setSel]=useState(null);
