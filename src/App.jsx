@@ -36,32 +36,82 @@ function mkSettle(comp){
 }
 
 // ── CALENDAR ─────────────────────────────────────────────────────
-function Cal({date,setDate}){
+function Cal({date,setDate,history,onViewSession}){
   const[show,setShow]=useState(false);
   const[c,setC]=useState(()=>{const d=new Date();return{y:d.getFullYear(),m:d.getMonth()};});
   const{y,m}=c,first=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate();
   const iso=d=>`${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
   const td=new Date().toISOString().split("T")[0];
+
+  // Build a set of dates that have saved sessions
+  const sessionDates=useMemo(()=>new Set((history||[]).map(h=>h.date)),[history]);
+
+  const handleDayClick=(isoDate,hasSession)=>{
+    if(hasSession){
+      // If date has a session, view that session history directly
+      onViewSession&&onViewSession(isoDate);
+      setShow(false);
+    } else {
+      // Otherwise set as game date
+      setDate(isoDate);
+      setShow(false);
+    }
+  };
+
   return(
     <div style={{position:"relative"}}>
       <button onClick={()=>setShow(s=>!s)} style={{fontSize:14,border:"none",background:"transparent",color:"#e2e8f0",cursor:"pointer",padding:0,fontWeight:700}}>{lbl(date)} ▾</button>
-      {show&&<div style={{position:"absolute",top:26,left:0,background:"#1e293b",border:"1px solid #334155",borderRadius:12,zIndex:200,padding:10,width:230,boxShadow:"0 12px 32px rgba(0,0,0,.6)"}}>
+      {show&&<div style={{position:"absolute",top:26,left:0,background:"#1e293b",border:"1px solid #334155",borderRadius:12,zIndex:200,padding:10,width:250,boxShadow:"0 12px 32px rgba(0,0,0,.6)"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
           <button onClick={()=>setC(c=>c.m===0?{y:c.y-1,m:11}:{y:c.y,m:c.m-1})} style={{background:"none",border:"none",color:"#94a3b8",fontSize:18,cursor:"pointer"}}>‹</button>
           <span style={{color:"#e2e8f0",fontWeight:700,fontSize:13}}>{MON[m]} {y}</span>
           <button onClick={()=>setC(c=>c.m===11?{y:c.y+1,m:0}:{y:c.y,m:c.m+1})} style={{background:"none",border:"none",color:"#94a3b8",fontSize:18,cursor:"pointer"}}>›</button>
         </div>
+        {/* Legend */}
+        <div style={{display:"flex",gap:10,marginBottom:6,paddingBottom:6,borderBottom:"1px solid #334155",justifyContent:"center"}}>
+          <div style={{display:"flex",alignItems:"center",gap:3}}><div style={{width:8,height:8,borderRadius:"50%",background:"#4ade80"}}/><span style={{fontSize:9,color:"#94a3b8"}}>Today</span></div>
+          <div style={{display:"flex",alignItems:"center",gap:3}}><div style={{width:8,height:8,borderRadius:"50%",background:"#facc15"}}/><span style={{fontSize:9,color:"#94a3b8"}}>Session (tap to view)</span></div>
+          <div style={{display:"flex",alignItems:"center",gap:3}}><div style={{width:8,height:8,borderRadius:"50%",background:"#185fa5"}}/><span style={{fontSize:9,color:"#94a3b8"}}>Selected</span></div>
+        </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",marginBottom:3}}>
           {["S","M","T","W","T","F","S"].map((d,i)=><div key={i} style={{textAlign:"center",fontSize:10,color:"#64748b",fontWeight:700}}>{d}</div>)}
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:1}}>
-          {[...Array(first).fill(null),...Array.from({length:dim},(_,i)=>i+1)].map((d,i)=>
-            !d?<div key={i}/>:
-            <button key={i} onClick={()=>{setDate(iso(d));setShow(false);}} style={{width:"100%",aspectRatio:"1",borderRadius:"50%",border:"none",cursor:"pointer",fontSize:12,
-              background:iso(d)===date?"#4ade80":iso(d)===td?"rgba(74,222,128,.15)":"transparent",
-              color:iso(d)===date?"#14532d":iso(d)===td?"#4ade80":"#e2e8f0",fontWeight:iso(d)===date||iso(d)===td?700:400}}>{d}</button>
-          )}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2}}>
+          {[...Array(first).fill(null),...Array.from({length:dim},(_,i)=>i+1)].map((d,i)=>{
+            if(!d) return <div key={i}/>;
+            const isoDate=iso(d);
+            const isSelected=isoDate===date;
+            const isToday=isoDate===td;
+            const hasSession=sessionDates.has(isoDate);
+            const sess=hasSession?(history||[]).find(h=>h.date===isoDate):null;
+            return(
+              <div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:1}}>
+                <button
+                  onClick={()=>handleDayClick(isoDate,hasSession)}
+                  title={hasSession?`${lbl(isoDate)} — ${(sess?.players||[]).length} players, kitty $${f(sess?.kittyEnd||0)}`:""}
+                  style={{width:"100%",aspectRatio:"1",borderRadius:"50%",border:hasSession?"2px solid #facc15":isSelected?"2px solid #4ade80":"1px solid transparent",
+                    cursor:"pointer",fontSize:11,fontWeight:hasSession||isSelected||isToday?700:400,
+                    background:isSelected?"#185fa5":isToday?"rgba(74,222,128,.15)":hasSession?"rgba(250,204,21,.1)":"transparent",
+                    color:isSelected?"#fff":isToday?"#4ade80":hasSession?"#facc15":"#e2e8f0",
+                    position:"relative"
+                  }}
+                >{d}</button>
+                {/* Dot indicator for session */}
+                {hasSession&&<div style={{width:4,height:4,borderRadius:"50%",background:"#facc15",marginTop:-1}}/>}
+              </div>
+            );
+          })}
         </div>
+        {/* Session count for this month */}
+        {(()=>{
+          const monthKey=`${y}-${String(m+1).padStart(2,"0")}`;
+          const monthSessions=(history||[]).filter(h=>h.date.startsWith(monthKey));
+          return monthSessions.length>0?(
+            <div style={{marginTop:8,paddingTop:6,borderTop:"1px solid #334155",textAlign:"center",fontSize:10,color:"#94a3b8"}}>
+              {monthSessions.length} session{monthSessions.length!==1?"s":""} this month
+            </div>
+          ):null;
+        })()}
       </div>}
     </div>
   );
@@ -677,6 +727,7 @@ export default function App(){
   const[view,setView]=useState("game"); // game | hist | board | ytd
   const[playerTab,setPlayerTab]=useState("players"); // players | session
   const[landscape,setLandscape]=useState(false);
+  const[calHistSel,setCalHistSel]=useState(null); // date string when viewing session from calendar
   const[showSum,setShowSum]=useState(false);
   const[extras,setExtras]=useState([]);
   const[newLabel,setNewLabel]=useState("");
@@ -794,7 +845,7 @@ export default function App(){
       <div style={{background:"#1a1a2e",borderRadius:14,padding:"10px 14px",marginBottom:8}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
           <span style={{fontSize:22}}>♠</span>
-          <div style={{flex:1}}><div style={{fontSize:15,fontWeight:700,color:"#fff"}}>RiverRat MPS</div><Cal date={date} setDate={setDate}/></div>
+          <div style={{flex:1}}><div style={{fontSize:15,fontWeight:700,color:"#fff"}}>RiverRat MPS</div><Cal date={date} setDate={setDate} history={history} onViewSession={(d)=>{setCalHistSel(d);setView("game");}}/></div>
           <div style={{textAlign:"center"}}>
             <div style={{fontSize:10,color:"#94a3b8"}}>playing</div>
             <div style={{fontSize:20,fontWeight:800,color:"#4ade80"}}>{sess.length}</div>
@@ -809,6 +860,55 @@ export default function App(){
           {navBtn("ytd","📊 YTD")}
         </div>
       </div>
+
+      {/* Calendar session quick-view popup */}
+      {calHistSel&&(()=>{
+        const h=history.find(x=>x.date===calHistSel);
+        if(!h) return null;
+        const totEx=(h.extras||[]).filter(e=>!(e.label||"").toLowerCase().includes("rebate")).reduce((s,e)=>s+Number(e.amount||0),0);
+        const netContrib=(h.totTax||0)-(h.rebate||0)-totEx;
+        return(
+          <div style={{...card,border:"2px solid #facc15",marginBottom:12}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+              <div>
+                <div style={{fontSize:15,fontWeight:700}}>📅 {lbl(h.date)}</div>
+                <div style={{fontSize:12,color:"#64748b"}}>{(h.players||[]).length} players · kitty ${f(h.kittyEnd)} · <span style={{color:netContrib>=0?"#1a7a3e":"#a32d2d",fontWeight:600}}>{netContrib>=0?"+":"-"}${f(Math.abs(netContrib))} net</span></div>
+              </div>
+              <button onClick={()=>setCalHistSel(null)} style={{fontSize:13,padding:"3px 10px",borderRadius:8,border:"0.5px solid #e2e8f0",background:"#f8fafc",cursor:"pointer"}}>✕</button>
+            </div>
+            {/* Results table */}
+            <div style={{overflowX:"auto",marginBottom:8}}>
+              <table style={{borderCollapse:"collapse",width:"100%",fontSize:11}}>
+                <thead><tr style={{background:"#f1f5f9"}}>
+                  {["Player","W/L","Tax","Rebate","Net"].map(c=><th key={c} style={{padding:"4px 6px",textAlign:c==="Player"?"left":"right",fontSize:10,color:"#64748b",fontWeight:700}}>{c}</th>)}
+                </tr></thead>
+                <tbody>{[...(h.players||[])].sort((a,b)=>(b.winnings||0)-(a.winnings||0)).map(p=>{
+                  const pRebate=p.rebate||0;
+                  const pNet=(p.winnings||0)-(p.tax||0)+pRebate;
+                  return(
+                    <tr key={p.name} style={{borderBottom:"0.5px solid #e2e8f0"}}>
+                      <td style={{padding:"4px 6px",fontWeight:700}}>{p.name}</td>
+                      <td style={{padding:"4px 6px",textAlign:"right",color:(p.winnings||0)>0?"#1a7a3e":(p.winnings||0)<0?"#a32d2d":"#64748b",fontWeight:600}}>{(p.winnings||0)===0?"—":(p.winnings>0?"+":"")+f(p.winnings||0)}</td>
+                      <td style={{padding:"4px 6px",textAlign:"right",color:"#ba7517"}}>{(p.tax||0)>0?f(p.tax):""}</td>
+                      <td style={{padding:"4px 6px",textAlign:"right",color:"#7c3aed"}}>{pRebate>0?"+$"+f(pRebate):""}</td>
+                      <td style={{padding:"4px 6px",textAlign:"right",fontWeight:700,color:pNet>0?"#1a7a3e":pNet<0?"#a32d2d":"#64748b"}}>{pNet===0?"—":(pNet>0?"+":"")+f(pNet)}</td>
+                    </tr>
+                  );
+                })}</tbody>
+              </table>
+            </div>
+            {/* Settlement */}
+            {(h.settlement||[]).length>0&&<>
+              <div style={{fontSize:10,fontWeight:700,color:"#475569",letterSpacing:".08em",marginBottom:5}}>SETTLEMENT</div>
+              {(h.settlement||[]).map((t,i)=><div key={i} style={{display:"flex",gap:8,padding:"4px 8px",background:"#f8fafc",borderRadius:7,marginBottom:4,fontSize:12}}>
+                <span style={{fontWeight:700,color:"#a32d2d"}}>{t.from}</span>
+                <span style={{color:"#94a3b8",flex:1}}>→ {t.to}</span>
+                <span style={{fontWeight:700,color:"#1a7a3e"}}>${f(t.amount)}</span>
+              </div>)}
+            </>}
+          </div>
+        );
+      })()}
 
       {loading&&<div style={{textAlign:"center",padding:20,color:"#64748b"}}>Loading...</div>}
 
