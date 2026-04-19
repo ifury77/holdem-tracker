@@ -36,15 +36,14 @@ function mkSettle(comp){
 }
 
 // ── CALENDAR ─────────────────────────────────────────────────────
-function Cal({date,setDate,history,onViewSession}){
+function Cal({date,setDate,history,onViewSession,sessionDates}){
   const[show,setShow]=useState(false);
   const[c,setC]=useState(()=>{const d=new Date();return{y:d.getFullYear(),m:d.getMonth()};});
   const{y,m}=c,first=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate();
   const iso=d=>`${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
   const td=new Date().toISOString().split("T")[0];
 
-  // Build a set of dates that have saved sessions
-  const sessionDates=useMemo(()=>new Set((history||[]).map(h=>h.date)),[history]);
+  // sessionDates passed as prop from App where history is fully loaded
 
   const handleDayClick=(isoDate,hasSession)=>{
     if(hasSession){
@@ -781,6 +780,9 @@ export default function App(){
     return()=>clearTimeout(t);
   },[date,players,extras]);
 
+  // Computed at App level so it's always fresh when calendar opens
+  const sessionDates=useMemo(()=>new Set(history.map(h=>h.date)),[history]);
+
   const prevK=useMemo(()=>{
     const past=history.filter(h=>h.date<date).sort((a,b)=>b.date.localeCompare(a.date));
     return past.length?past[0].kittyEnd:2948;
@@ -845,7 +847,7 @@ export default function App(){
       <div style={{background:"#1a1a2e",borderRadius:14,padding:"10px 14px",marginBottom:8}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
           <span style={{fontSize:22}}>♠</span>
-          <div style={{flex:1}}><div style={{fontSize:15,fontWeight:700,color:"#fff"}}>RiverRat MPS</div><Cal date={date} setDate={setDate} history={history} onViewSession={(d)=>{setCalHistSel(d);setView("game");}}/></div>
+          <div style={{flex:1}}><div style={{fontSize:15,fontWeight:700,color:"#fff"}}>RiverRat MPS</div><Cal date={date} setDate={setDate} history={history} sessionDates={sessionDates} onViewSession={(d)=>{setCalHistSel(d);setView("game");}}/></div>
           <div style={{textAlign:"center"}}>
             <div style={{fontSize:10,color:"#94a3b8"}}>playing</div>
             <div style={{fontSize:20,fontWeight:800,color:"#4ade80"}}>{sess.length}</div>
