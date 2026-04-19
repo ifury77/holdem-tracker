@@ -751,7 +751,8 @@ export default function App(){
       {/* Header */}
       <div style={{background:"#1a1a2e",borderRadius:14,padding:"10px 14px",marginBottom:8}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-          <span style={{fontSize:22}}>♠</span>
+          {/* Logo on the far left */}
+          <RRLogo size={48}/>
           <div style={{flex:1}}>
             <div style={{fontSize:15,fontWeight:700,color:"#fff"}}>RiverRat MPS</div>
             <Cal date={date} setDate={setDate} history={history} sessionDates={sessionDates} onViewSession={(d)=>{setCalHistSel(d);setView("game");}}/>
@@ -762,8 +763,6 @@ export default function App(){
             <div style={{fontSize:20,fontWeight:800,color:"#4ade80"}}>{sess.length}</div>
             <div style={{fontSize:8,color:"#4ade80",opacity:0.7}}>● LIVE</div>
           </div>
-          {/* River Rat Masters Logo */}
-          <RRLogo size={48}/>
         </div>
         <div style={{display:"flex",background:"rgba(255,255,255,.08)",borderRadius:10,padding:3,gap:2}}>
           {navBtn("game","🃏 Game")}
@@ -852,8 +851,27 @@ export default function App(){
           </>}
 
           {playerTab==="session"&&<>
-            {sess.length>0&&<div style={{display:"flex",justifyContent:"flex-end",marginBottom:6}}>
-              <button onClick={()=>setLandscape(l=>!l)} style={{fontSize:10,padding:"3px 9px",borderRadius:6,border:"none",background:"#e2e8f0",color:"#475569",cursor:"pointer",fontWeight:600}}>{landscape?"📱 Portrait":"🖥️ Landscape"}</button>
+            {sess.length>0&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+              {/* Player count summary */}
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                <div style={{background:"#1a1a2e",borderRadius:8,padding:"4px 10px",display:"flex",alignItems:"center",gap:5}}>
+                  <span style={{fontSize:10,color:"#94a3b8"}}>In session:</span>
+                  <span style={{fontSize:14,fontWeight:800,color:"#4ade80"}}>{sess.length}</span>
+                </div>
+                {sess.filter(p=>p.inSession).map(p=>{
+                  const isTop=topL?.name===p.name;
+                  return(
+                    <div key={p.name} style={{width:28,height:28,borderRadius:"50%",
+                      background:isTop?"#fbbf24":"#185fa5",
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      fontSize:10,fontWeight:700,color:"#fff",
+                      border:isTop?"2px solid #f59e0b":"2px solid #3b82f6",
+                      title:p.name
+                    }}>{p.name}</div>
+                  );
+                })}
+              </div>
+              <button onClick={()=>setLandscape(l=>!l)} style={{fontSize:10,padding:"3px 9px",borderRadius:6,border:"none",background:"#e2e8f0",color:"#475569",cursor:"pointer",fontWeight:600,flexShrink:0}}>{landscape?"📱 Portrait":"🖥️ Landscape"}</button>
             </div>}
             {sess.length===0
               ?<div style={{textAlign:"center",padding:"16px 0",color:"#94a3b8",fontSize:13}}>No players in session yet.<br/><span style={{fontSize:12}}>Go to "All" tab to add players</span></div>
