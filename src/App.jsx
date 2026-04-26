@@ -527,7 +527,7 @@ function YTD({history,onClose}){
               </tr>
             </thead>
             <tbody>
-              {ytd.map((p,i)=>(
+              {PLAYER_ORDER.filter(n=>ytd.find(x=>x.name===n)).map((name,i)=>{const p=ytd.find(x=>x.name===name);return(
                 <tr key={p.name} style={{borderBottom:"0.5px solid #e2e8f0",background:i%2===0?"#fff":"#f8fafc"}}>
                   <td style={{padding:"5px 6px",fontWeight:700,position:"sticky",left:0,background:i%2===0?"#fff":"#f8fafc"}}>{p.name}</td>
                   <td style={{padding:"5px 4px",textAlign:"right",color:"#64748b"}}>{p.attend}</td>
@@ -537,7 +537,7 @@ function YTD({history,onClose}){
                   <td style={{padding:"5px 4px",textAlign:"right",color:"#7c3aed"}}>{p.rebate>0?"+$"+f(p.rebate):"—"}</td>
                   <td style={{padding:"5px 6px",textAlign:"right",fontWeight:800,color:p.net>0?"#1a7a3e":p.net<0?"#a32d2d":"#64748b"}}>{fs(p.net)}</td>
                 </tr>
-              ))}
+              );})}
             </tbody>
           </table>
         </div>
