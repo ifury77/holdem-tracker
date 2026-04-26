@@ -444,7 +444,13 @@ function YTD({history,onClose}){
     return filterYTD?arr.filter(p=>p.name.toLowerCase().includes(filterYTD.toLowerCase())):arr;
   },[sessions,sortYTD,filterYTD]);
 
-  const ytdPlayers=useMemo(()=>ytd.map(p=>p.name),[ytd]);
+  // Fixed player column order
+  const PLAYER_ORDER=["IO","PN","CW","BT","AK","DS","PK","SC","YS","SY","DT","JN","KC","JW"];
+  const ytdPlayers=useMemo(()=>{
+    // Start with fixed order, only include players who appeared this year
+    const appeared=new Set(sessions.flatMap(s=>(s.players||[]).map(p=>p.name)));
+    return PLAYER_ORDER.filter(n=>appeared.has(n));
+  },[sessions]);
 
   return(
     <div style={{...card,marginBottom:12}}>
