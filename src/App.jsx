@@ -1084,6 +1084,45 @@ export default function App(){
         <div style={card}>
           <div style={{fontSize:15,fontWeight:700,marginBottom:10}}>💸 Settlement</div>
           {stl.length===0?<div style={{textAlign:"center",padding:"10px 0",color:"#94a3b8",fontSize:14}}>{sess.length===0?"Add players above":"All balanced"}</div>:stl.map((t,i)=><SRow key={i} t={t}/>)}
+
+          {/* Tally boxes */}
+          {sess.length>0&&(()=>{
+            const tallyOk=totW+totL===0;
+            const stlTotal=stl.reduce((s,t)=>s+(t.amount||0),0);
+            const trfOk=stlTotal===totW;
+            return(
+              <div style={{marginTop:10}}>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr auto",gap:6,marginBottom:6,alignItems:"stretch"}}>
+                  <div style={{background:"#f8fafc",borderRadius:8,padding:"7px 8px",border:"1px solid #e2e8f0",textAlign:"center"}}>
+                    <div style={{fontSize:9,color:"#94a3b8",fontWeight:700,marginBottom:2}}>TOTAL LOSSES</div>
+                    <div style={{fontSize:13,fontWeight:800,color:"#dc2626"}}>{f(totL)}</div>
+                  </div>
+                  <div style={{background:"#f8fafc",borderRadius:8,padding:"7px 8px",border:"1px solid #e2e8f0",textAlign:"center"}}>
+                    <div style={{fontSize:9,color:"#94a3b8",fontWeight:700,marginBottom:2}}>TOTAL WINNING</div>
+                    <div style={{fontSize:13,fontWeight:800,color:"#16a34a"}}>{f(totW)}</div>
+                  </div>
+                  <div style={{background:tallyOk?"#16a34a":"#dc2626",borderRadius:8,padding:"7px 12px",textAlign:"center",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minWidth:52}}>
+                    <div style={{fontSize:9,color:"rgba(255,255,255,.8)",fontWeight:700,marginBottom:1}}>TALLY</div>
+                    <div style={{fontSize:20,fontWeight:900,color:"#fff",lineHeight:1}}>{tallyOk?"✓":"✗"}</div>
+                  </div>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr auto",gap:6,alignItems:"stretch"}}>
+                  <div style={{background:"#f8fafc",borderRadius:8,padding:"7px 8px",border:"1px solid #e2e8f0",textAlign:"center"}}>
+                    <div style={{fontSize:9,color:"#94a3b8",fontWeight:700,marginBottom:2}}>TOTAL TRF</div>
+                    <div style={{fontSize:13,fontWeight:800,color:"#1e293b"}}>{f(stlTotal)}</div>
+                  </div>
+                  <div style={{background:"#f8fafc",borderRadius:8,padding:"7px 8px",border:"1px solid #e2e8f0",textAlign:"center"}}>
+                    <div style={{fontSize:9,color:"#94a3b8",fontWeight:700,marginBottom:2}}>TOTAL WINNING</div>
+                    <div style={{fontSize:13,fontWeight:800,color:"#16a34a"}}>{f(totW)}</div>
+                  </div>
+                  <div style={{background:trfOk?"#16a34a":"#dc2626",borderRadius:8,padding:"7px 12px",textAlign:"center",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minWidth:52}}>
+                    <div style={{fontSize:9,color:"rgba(255,255,255,.8)",fontWeight:700,marginBottom:1}}>TALLY</div>
+                    <div style={{fontSize:20,fontWeight:900,color:"#fff",lineHeight:1}}>{trfOk?"✓":"✗"}</div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         <div style={card}>
