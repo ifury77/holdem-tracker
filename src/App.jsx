@@ -22,8 +22,9 @@ const lbl=iso=>{if(!iso)return"";const[y,m,d]=iso.split("-");return d+"-"+MON[+m
 const card={background:"var(--color-background-primary)",border:"0.5px solid var(--color-border-tertiary)",borderRadius:14,padding:12,marginBottom:12};
 
 function mkSettle(comp){
-  const pay=comp.filter(p=>p.net<0).map(p=>({name:p.name,amt:-p.net})).sort((a,b)=>b.amt-a.amt);
-  const rec=comp.filter(p=>p.net>0).map(p=>({name:p.name,amt:p.net})).sort((a,b)=>b.amt-a.amt);
+  // Settlement uses GROSS winnings (before tax), tax goes to kitty separately
+  const pay=comp.filter(p=>p.winnings<0).map(p=>({name:p.name,amt:-p.winnings})).sort((a,b)=>b.amt-a.amt);
+  const rec=comp.filter(p=>p.winnings>0).map(p=>({name:p.name,amt:p.winnings})).sort((a,b)=>b.amt-a.amt);
   const tx=[],p=pay.map(x=>({...x})),r=rec.map(x=>({...x}));
   let i=0,j=0;
   while(i<p.length&&j<r.length){
@@ -530,10 +531,10 @@ function YTD({history,onClose}){
               {sessions.map((sess,si)=>{
                 const pMap={};
                 (sess.players||[]).forEach(p=>{
-                  const pRebate=p.rebate||0;
-                  pMap[p.name]=(p.winnings||0)-(p.tax||0)+pRebate;
+                  // Session grid shows GROSS winnings (before tax/rebate)
+                  pMap[p.name]=p.winnings||0;
                 });
-                const winnerTO=(sess.players||[]).filter(p=>{const pRebate=p.rebate||0;return(p.winnings||0)-(p.tax||0)+pRebate>0;}).reduce((s,p)=>{const pRebate=p.rebate||0;return s+(p.winnings||0)-(p.tax||0)+pRebate;},0);
+                const winnerTO=(sess.players||[]).filter(p=>(p.winnings||0)>0).reduce((s,p)=>s+(p.winnings||0),0);
                 const bg=si%2===0?"#fff":"#f8fafc";
                 return(
                   <tr key={sess.date} style={{borderBottom:"0.5px solid #e2e8f0",background:bg}}>
@@ -788,7 +789,7 @@ export default function App(){
           {/* Logo on the far left */}
           <RRLogo size={48}/>
           <div style={{flex:1}}>
-            <div style={{fontSize:15,fontWeight:700,color:"#fff"}}>RiverRat MPS</div>
+            <div style={{fontSize:15,fontWeight:700,color:"#fff"}}>RiverRat Masters</div>
             <Cal date={date} setDate={setDate} history={history} sessionDates={sessionDates} onViewSession={(d)=>{setCalHistSel(d);setView("game");}}/>
           </div>
           {/* Playing count + LIVE indicator */}
