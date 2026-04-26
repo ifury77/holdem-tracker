@@ -781,7 +781,7 @@ export default function App(){
   const[newLabel,setNewLabel]=useState("");
   const[newAmt,setNewAmt]=useState("");
   const[newName,setNewName]=useState("");
-  const[confirmNew,setConfirmNew]=useState(false);
+
   const[saving,setSaving]=useState(false);
   const[loading,setLoading]=useState(true);
 
@@ -823,7 +823,22 @@ export default function App(){
   },[history,date]);
 
   const sess=players.filter(p=>p.inSession);
-  const tog=n=>setPlayers(ps=>ps.map(p=>p.name===n?{...p,inSession:!p.inSession,rebuys:p.inSession?0:1}:p));
+  const tog=n=>setPlayers(ps=>{
+    const current=ps.find(p=>p.name===n);
+    // If toggling IN and no one is in session yet → start fresh new session
+    if(!current?.inSession && ps.filter(p=>p.inSession).length===0){
+      const tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);
+      const nd=tomorrow.toISOString().split("T")[0];
+      // Only advance date if current date already has a saved session
+      const hasSession=history.some(h=>h.date===date);
+      if(hasSession){
+        setDate(nd);
+        setExtras([]);
+        setShowSum(false);
+      }
+    }
+    return ps.map(p=>p.name===n?{...p,inSession:!p.inSession,rebuys:p.inSession?0:1}:p);
+  });
   const chgR=(n,d)=>setPlayers(ps=>ps.map(p=>p.name===n?{...p,rebuys:Math.max(1,p.rebuys+d)}:p));
   const setF=(n,v)=>setPlayers(ps=>ps.map(p=>p.name===n?{...p,finalChips:v}:p));
   const addG=()=>{const n=newName.trim().toUpperCase();if(!n||players.find(p=>p.name===n))return;setPlayers(ps=>[...ps,{name:n,inSession:true,rebuys:1,finalChips:""}]);setNewName("");};
@@ -1100,13 +1115,6 @@ export default function App(){
 
         <div style={{display:"flex",gap:8,marginBottom:24}}>
           <button onClick={save} disabled={saving} style={{flex:1,fontSize:15,fontWeight:700,padding:13,borderRadius:12,border:"none",background:saving?"#94a3b8":"#1a7a3e",color:"#fff",cursor:"pointer"}}>{saving?"Saving...":"💾 Save + Summary"}</button>
-          {confirmNew
-            ?<div style={{display:"flex",gap:6}}>
-              <button onClick={newSess} style={{fontSize:14,fontWeight:700,padding:"13px 12px",borderRadius:12,border:"none",background:"#dc2626",color:"#fff",cursor:"pointer"}}>Confirm</button>
-              <button onClick={()=>setConfirmNew(false)} style={{fontSize:14,fontWeight:700,padding:"13px 12px",borderRadius:12,border:"1px solid #e2e8f0",background:"#fff",cursor:"pointer"}}>Cancel</button>
-            </div>
-            :<button onClick={()=>setConfirmNew(true)} style={{fontSize:15,fontWeight:700,padding:"13px 16px",borderRadius:12,border:"none",background:"#1e293b",color:"#94a3b8",cursor:"pointer"}}>🆕 New</button>
-          }
         </div>
       </>}
     </div>
