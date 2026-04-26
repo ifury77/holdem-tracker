@@ -221,6 +221,46 @@ function Summary({date,comp,stl,totTax,extras,prevK,curK,rebate,topL,onClose}){
           </div>
         ))}
         <div style={{height:1,background:"#e2e8f0",margin:"10px 0"}}/>
+        {/* Tally boxes */}
+        {(()=>{
+          const grossW=comp.filter(p=>p.winnings>0).reduce((s,p)=>s+p.winnings,0);
+          const grossL=comp.filter(p=>p.winnings<0).reduce((s,p)=>s+p.winnings,0);
+          const trf=comp.reduce((s,p)=>s+Math.abs(p.winnings),0)/2;
+          const tallyOk=grossW+grossL===0;
+          return(
+            <div style={{marginBottom:10}}>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:6}}>
+                <div style={{background:"#f8fafc",borderRadius:8,padding:"6px 8px",border:"1px solid #e2e8f0",textAlign:"center"}}>
+                  <div style={{fontSize:9,color:"#94a3b8",fontWeight:700,marginBottom:2}}>TOTAL LOSSES</div>
+                  <div style={{fontSize:13,fontWeight:800,color:"#dc2626"}}>{grossL.toLocaleString()}</div>
+                </div>
+                <div style={{background:"#f8fafc",borderRadius:8,padding:"6px 8px",border:"1px solid #e2e8f0",textAlign:"center"}}>
+                  <div style={{fontSize:9,color:"#94a3b8",fontWeight:700,marginBottom:2}}>TOTAL WINNING</div>
+                  <div style={{fontSize:13,fontWeight:800,color:"#16a34a"}}>{grossW.toLocaleString()}</div>
+                </div>
+                <div style={{background:tallyOk?"#16a34a":"#dc2626",borderRadius:8,padding:"6px 8px",textAlign:"center"}}>
+                  <div style={{fontSize:9,color:"rgba(255,255,255,.8)",fontWeight:700,marginBottom:2}}>TALLY</div>
+                  <div style={{fontSize:13,fontWeight:800,color:"#fff"}}>{tallyOk?"Yes":"No"}</div>
+                </div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
+                <div style={{background:"#f8fafc",borderRadius:8,padding:"6px 8px",border:"1px solid #e2e8f0",textAlign:"center"}}>
+                  <div style={{fontSize:9,color:"#94a3b8",fontWeight:700,marginBottom:2}}>TOTAL TRF</div>
+                  <div style={{fontSize:13,fontWeight:800,color:"#1e293b"}}>{trf.toLocaleString()}</div>
+                </div>
+                <div style={{background:"#f8fafc",borderRadius:8,padding:"6px 8px",border:"1px solid #e2e8f0",textAlign:"center"}}>
+                  <div style={{fontSize:9,color:"#94a3b8",fontWeight:700,marginBottom:2}}>TOTAL WINNING</div>
+                  <div style={{fontSize:13,fontWeight:800,color:"#16a34a"}}>{grossW.toLocaleString()}</div>
+                </div>
+                <div style={{background:tallyOk?"#16a34a":"#dc2626",borderRadius:8,padding:"6px 8px",textAlign:"center"}}>
+                  <div style={{fontSize:9,color:"rgba(255,255,255,.8)",fontWeight:700,marginBottom:2}}>TALLY</div>
+                  <div style={{fontSize:13,fontWeight:800,color:"#fff"}}>{tallyOk?"Yes":"No"}</div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+        <div style={{height:1,background:"#e2e8f0",margin:"10px 0"}}/>
         <div style={{fontSize:10,fontWeight:700,color:"#475569",letterSpacing:".08em",marginBottom:8}}>SETTLEMENT</div>
         {stl.map((t,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
           <span style={{fontSize:13,fontWeight:700,color:"#dc2626",minWidth:28}}>{t.from}</span>
@@ -645,6 +685,47 @@ function Hist({history,onClose}){
             })}</tbody>
           </table>
         </div>
+        {/* Tally boxes */}
+        {(()=>{
+          const grossW=(h.players||[]).filter(p=>(p.winnings||0)>0).reduce((s,p)=>s+(p.winnings||0),0);
+          const grossL=(h.players||[]).filter(p=>(p.winnings||0)<0).reduce((s,p)=>s+(p.winnings||0),0);
+          const trf=(h.players||[]).reduce((s,p)=>s+Math.abs(p.winnings||0),0)/2;
+          const stl=(h.settlement||[]).reduce((s,t)=>s+(t.amount||0),0);
+          const tallyOk=grossW+grossL===0;
+          const trfTallyOk=Math.round(trf)===Math.round(stl);
+          return(
+            <div style={{marginBottom:10}}>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:5,marginBottom:5}}>
+                <div style={{background:"#f8fafc",borderRadius:7,padding:"5px 6px",border:"1px solid #e2e8f0",textAlign:"center"}}>
+                  <div style={{fontSize:8,color:"#94a3b8",fontWeight:700,marginBottom:1}}>TOTAL LOSSES</div>
+                  <div style={{fontSize:12,fontWeight:800,color:"#dc2626"}}>{grossL.toLocaleString()}</div>
+                </div>
+                <div style={{background:"#f8fafc",borderRadius:7,padding:"5px 6px",border:"1px solid #e2e8f0",textAlign:"center"}}>
+                  <div style={{fontSize:8,color:"#94a3b8",fontWeight:700,marginBottom:1}}>TOTAL WINNING</div>
+                  <div style={{fontSize:12,fontWeight:800,color:"#16a34a"}}>{grossW.toLocaleString()}</div>
+                </div>
+                <div style={{background:tallyOk?"#16a34a":"#dc2626",borderRadius:7,padding:"5px 6px",textAlign:"center"}}>
+                  <div style={{fontSize:8,color:"rgba(255,255,255,.8)",fontWeight:700,marginBottom:1}}>TALLY</div>
+                  <div style={{fontSize:12,fontWeight:800,color:"#fff"}}>{tallyOk?"Yes":"No"}</div>
+                </div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:5,marginBottom:10}}>
+                <div style={{background:"#f8fafc",borderRadius:7,padding:"5px 6px",border:"1px solid #e2e8f0",textAlign:"center"}}>
+                  <div style={{fontSize:8,color:"#94a3b8",fontWeight:700,marginBottom:1}}>TOTAL TRF</div>
+                  <div style={{fontSize:12,fontWeight:800,color:"#1e293b"}}>{trf.toLocaleString()}</div>
+                </div>
+                <div style={{background:"#f8fafc",borderRadius:7,padding:"5px 6px",border:"1px solid #e2e8f0",textAlign:"center"}}>
+                  <div style={{fontSize:8,color:"#94a3b8",fontWeight:700,marginBottom:1}}>TOTAL WINNING</div>
+                  <div style={{fontSize:12,fontWeight:800,color:"#16a34a"}}>{grossW.toLocaleString()}</div>
+                </div>
+                <div style={{background:trfTallyOk?"#16a34a":"#dc2626",borderRadius:7,padding:"5px 6px",textAlign:"center"}}>
+                  <div style={{fontSize:8,color:"rgba(255,255,255,.8)",fontWeight:700,marginBottom:1}}>TALLY</div>
+                  <div style={{fontSize:12,fontWeight:800,color:"#fff"}}>{trfTallyOk?"Yes":"No"}</div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
         <div style={{fontSize:10,fontWeight:700,color:"#475569",letterSpacing:".08em",marginBottom:6}}>SETTLEMENT</div>
         {(h.settlement||[]).map((t,i)=><div key={i} style={{display:"flex",gap:8,padding:"6px 10px",background:"var(--color-background-secondary)",borderRadius:8,marginBottom:5}}>
           <span style={{fontWeight:700,color:"#a32d2d"}}>{t.from}</span>
