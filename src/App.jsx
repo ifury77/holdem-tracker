@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, collection, onSnapshot } from "firebase/firestore";
 
@@ -793,27 +793,45 @@ export default function App(){
     return()=>unsub();
   },[]);
 
+  // Track if we've done the initial restore from live doc
+  const _restored=React.useRef(false);
+
   useEffect(()=>{
-    console.log("🔴 Subscribing to live doc, deviceId:", _deviceId);
     const unsub=onSnapshot(_liveRef,(snap)=>{
-      if(!snap.exists()){console.log("📭 Live doc empty");return;}
+      if(!snap.exists()) return;
       const d=snap.data();
-      console.log("📡 Live update from:", d._source, "my id:", _deviceId);
-      if(d._source===_deviceId){console.log("🔄 Ignoring own write");return;}
-      console.log("✅ Applying remote state:", d.players?.filter(p=>p.inSession).map(p=>p.name));
-      setDate(d.date||new Date().toISOString().split("T")[0]);
-      setPlayers(d.players||NAMES.map(n=>({name:n,inSession:false,rebuys:0,finalChips:""})));
-      setExtras(d.extras||[]);
-    },(err)=>{console.error("❌ Live listener error:",err);});
+      // On first load (initial restore), always apply regardless of source
+      // This restores session if app was closed mid-game
+      if(!_restored.current){
+        _restored.current=true;
+        if(d.date) setDate(d.date);
+        if(d.players&&Array.isArray(d.players)) setPlayers(d.players);
+        if(d.extras&&Array.isArray(d.extras)) setExtras(d.extras);
+        if(d.showSum!==undefined) setShowSum(d.showSum);
+        return;
+      }
+      // After initial restore, only apply updates from OTHER devices
+      if(d._source===_deviceId) return;
+      if(d.date) setDate(d.date);
+      if(d.players&&Array.isArray(d.players)) setPlayers(d.players);
+      if(d.extras&&Array.isArray(d.extras)) setExtras(d.extras);
+      if(d.showSum!==undefined) setShowSum(d.showSum);
+    },(err)=>{console.error("Live listener error:",err);});
     return()=>unsub();
   },[]);
 
+  // Auto-save live state 600ms after any change — survives app restarts
   useEffect(()=>{
     const t=setTimeout(()=>{
-      setDoc(_liveRef,{date,players,extras,_source:_deviceId,_ts:Date.now()}).catch((e)=>{console.error("Live write failed:",e);});
-    },800);
+      setDoc(_liveRef,{
+        date,players,extras,showSum,
+        _source:_deviceId,
+        _ts:Date.now(),
+        _saved:new Date().toISOString()
+      }).catch(()=>{});
+    },600);
     return()=>clearTimeout(t);
-  },[date,players,extras]);
+  },[date,players,extras,showSum]);
 
   const sessionDates=useMemo(()=>new Set(history.map(h=>h.date)),[history]);
 
