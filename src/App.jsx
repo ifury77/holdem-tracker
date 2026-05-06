@@ -798,16 +798,21 @@ export default function App(){
 
   useEffect(()=>{
     const unsub=onSnapshot(_liveRef,(snap)=>{
-      if(!snap.exists()) return;
+      if(!snap.exists()){_restored.current=true;return;}
       const d=snap.data();
-      // On first load (initial restore), always apply regardless of source
-      // This restores session if app was closed mid-game
+      // On first load — only restore if there's an active session in progress
       if(!_restored.current){
         _restored.current=true;
-        if(d.date) setDate(d.date);
-        if(d.players&&Array.isArray(d.players)) setPlayers(d.players);
-        if(d.extras&&Array.isArray(d.extras)) setExtras(d.extras);
-        if(d.showSum!==undefined) setShowSum(d.showSum);
+        const hasActivePlayers=d.players&&Array.isArray(d.players)&&d.players.some(p=>p.inSession);
+        const hasChips=d.players&&d.players.some(p=>p.finalChips&&Number(p.finalChips)>0);
+        const isRecent=d._ts&&(Date.now()-d._ts)<24*60*60*1000; // within last 24 hours
+        if((hasActivePlayers||hasChips)&&isRecent){
+          // Only restore if it's a genuinely active recent session
+          if(d.date) setDate(d.date);
+          if(d.players&&Array.isArray(d.players)) setPlayers(d.players);
+          if(d.extras&&Array.isArray(d.extras)) setExtras(d.extras);
+          if(d.showSum!==undefined) setShowSum(d.showSum);
+        }
         return;
       }
       // After initial restore, only apply updates from OTHER devices
@@ -820,8 +825,10 @@ export default function App(){
     return()=>unsub();
   },[]);
 
-  // Auto-save live state 600ms after any change — survives app restarts
+  // Auto-save live state 600ms after any change — only when session is active
   useEffect(()=>{
+    const hasActive=players.some(p=>p.inSession);
+    if(!hasActive) return; // don't overwrite live doc when no session running
     const t=setTimeout(()=>{
       setDoc(_liveRef,{
         date,players,extras,showSum,
@@ -884,7 +891,10 @@ export default function App(){
         net:p.name===topL?.name?(p.winnings-p.tax+rebate):(p.winnings-p.tax)
       })),
       settlement:stl,extras:extras.map(e=>({...e})),totTax,prevKitty:prevK};
-    try{await setDoc(doc(db,"sessions",date),entry);}
+    try{await setDoc(doc(db,"sessions",date),entry);
+      // Clear live doc so stale data doesn't restore on next open
+      await setDoc(_liveRef,{date:td,players:NAMES.map(n=>({name:n,inSession:false,rebuys:0,finalChips:""})),extras:[],showSum:false,_source:_deviceId,_ts:Date.now()}).catch(()=>{});
+    }
     catch(e){alert("Save failed: "+e.message);}
     setSaving(false);setShowSum(true);
   };
