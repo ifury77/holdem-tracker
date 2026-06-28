@@ -595,7 +595,7 @@ function YTD({history,onClose}){
                       return(<td key={n} style={{padding:"4px 5px",textAlign:"right",fontWeight:600,color:v===undefined?"transparent":v>0?"#1a7a3e":v<0?"#a32d2d":"#64748b",background:v===undefined?"transparent":v>0?"#d4f7e0":v<0?"#fde8e8":"transparent"}}>{v===undefined?"":v===0?"—":fs(v)}</td>);
                     })}
                     <td style={{padding:"4px 5px",textAlign:"right",color:"#64748b"}}>{(sess.players||[]).length}</td>
-                    <td style={{padding:"4px 5px",textAlign:"right",color:"#3b82f6",fontWeight:600}}>${f(winnerTO*2)}</td>
+                    <td style={{padding:"4px 5px",textAlign:"right",color:"#3b82f6",fontWeight:600}}>${f(winnerTO)}</td>
                   </tr>
                 );
               })}
