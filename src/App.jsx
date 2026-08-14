@@ -784,6 +784,9 @@ export default function App(){
 
   const[saving,setSaving]=useState(false);
   const[loading,setLoading]=useState(true);
+  const[scanning,setScanning]=useState(false);
+  const[scanErr,setScanErr]=useState("");
+  const fileInputRef=React.useRef(null);
 
   useEffect(()=>{
     const unsub=onSnapshot(collection(db,"sessions"),(snap)=>{
@@ -867,6 +870,55 @@ export default function App(){
   const chgR=(n,d)=>setPlayers(ps=>ps.map(p=>p.name===n?{...p,rebuys:Math.max(1,p.rebuys+d)}:p));
   const setF=(n,v)=>setPlayers(ps=>ps.map(p=>p.name===n?{...p,finalChips:v}:p));
   const addG=()=>{const n=newName.trim().toUpperCase();if(!n||players.find(p=>p.name===n))return;setPlayers(ps=>[...ps,{name:n,inSession:true,rebuys:1,finalChips:""}]);setNewName("");};
+
+  const onScanFile=async(e)=>{
+    const file=e.target.files?.[0];
+    if(!file) return;
+    setScanning(true);setScanErr("");
+    try{
+      const dataUrl=await new Promise((resolve,reject)=>{
+        const r=new FileReader();
+        r.onload=()=>resolve(r.result);
+        r.onerror=()=>reject(new Error("Could not read file"));
+        r.readAsDataURL(file);
+      });
+      const base64=dataUrl.split(",")[1];
+      const mediaType=file.type||"image/png";
+      const resp=await fetch("/api/parse-scoresheet",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({image:base64,mediaType})
+      });
+      const result=await resp.json();
+      if(!resp.ok) throw new Error(result.error||"Scan failed");
+
+      // Merge parsed players into existing roster (match by name; add new guests)
+      setPlayers(ps=>{
+        const next=ps.map(p=>({...p}));
+        (result.players||[]).forEach(rp=>{
+          const name=(rp.name||"").trim().toUpperCase();
+          if(!name) return;
+          const idx=next.findIndex(p=>p.name===name);
+          const vals={inSession:true,rebuys:Number(rp.rebuys)||1,finalChips:rp.finalChips!==undefined&&rp.finalChips!==null?String(rp.finalChips):""};
+          if(idx>=0) next[idx]={...next[idx],...vals};
+          else next.push({name,...vals});
+        });
+        return next;
+      });
+
+      if(Array.isArray(result.extras)&&result.extras.length){
+        setExtras(prev=>[...prev,...result.extras.map(ex=>({label:ex.label||"",amount:Number(ex.amount)||0}))]);
+      }
+      if(result.date) setDate(result.date);
+
+      setPlayerTab("session");
+    }catch(err){
+      setScanErr(err.message||"Scan failed");
+    }finally{
+      setScanning(false);
+      if(fileInputRef.current) fileInputRef.current.value="";
+    }
+  };
 
   const comp=useMemo(()=>sess.map(p=>{
     const buyIn=p.rebuys*BUY_IN,chips=Number(p.finalChips)||0,winnings=Math.round((chips-buyIn)/2),tax=winnings>0?Math.round(winnings*TAX):0;
@@ -999,12 +1051,19 @@ export default function App(){
         <div style={card}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
             <span style={{fontSize:15,fontWeight:700}}>🃏 Players</span>
-            <div style={{display:"flex",background:"#e2e8f0",borderRadius:8,padding:2,gap:1}}>
-              {[["players","All"],["session","Session"]].map(([v,l])=>(
-                <button key={v} onClick={()=>setPlayerTab(v)} style={{fontSize:12,padding:"4px 10px",borderRadius:6,fontWeight:playerTab===v?700:400,background:playerTab===v?"#fff":"transparent",border:"none",cursor:"pointer",color:playerTab===v?"#1e293b":"#64748b"}}>{l}{v==="session"&&sess.length>0?` (${sess.length})`:""}</button>
-              ))}
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={onScanFile} style={{display:"none"}}/>
+              <button onClick={()=>fileInputRef.current?.click()} disabled={scanning} style={{fontSize:11,padding:"6px 9px",borderRadius:8,border:"1px solid #e2e8f0",background:scanning?"#f1f5f9":"#fff",cursor:scanning?"default":"pointer",fontWeight:700,color:"#185fa5",display:"flex",alignItems:"center",gap:4}}>
+                {scanning?"⏳ Scanning...":"📸 Scan"}
+              </button>
+              <div style={{display:"flex",background:"#e2e8f0",borderRadius:8,padding:2,gap:1}}>
+                {[["players","All"],["session","Session"]].map(([v,l])=>(
+                  <button key={v} onClick={()=>setPlayerTab(v)} style={{fontSize:12,padding:"4px 10px",borderRadius:6,fontWeight:playerTab===v?700:400,background:playerTab===v?"#fff":"transparent",border:"none",cursor:"pointer",color:playerTab===v?"#1e293b":"#64748b"}}>{l}{v==="session"&&sess.length>0?` (${sess.length})`:""}</button>
+                ))}
+              </div>
             </div>
           </div>
+          {scanErr&&<div style={{fontSize:11,color:"#dc2626",marginBottom:8,background:"#fef2f2",borderRadius:6,padding:"5px 8px"}}>⚠️ {scanErr}</div>}
 
           {playerTab==="players"&&<>
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:8}}>
