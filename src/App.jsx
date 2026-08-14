@@ -200,7 +200,7 @@ function Summary({date,comp,stl,totTax,extras,prevK,curK,rebate,topL,onClose}){
             <div style={{fontSize:20,fontWeight:800,color:"#fff"}}>♠ {lbl(date)}</div>
             <div style={{fontSize:12,color:"#4ade80"}}>{comp.length} players · ${f(pool)} pool</div>
           </div>
-          <button onClick={onClose} style={{background:"rgba(255,255,255,.08)",border:"none",color:"#94a3b8",fontSize:13,padding:"4px 9px",borderRadius:7,cursor:"pointer"}}>✕</button>
+          <button onClick={onClose} style={{background:"rgba(255,255,255,.08)",border:"none",color:"#94a3b8",fontSize:13,padding:"4px 9px",borderRadius:7,cursor:"pointer"}}><i className="ti ti-x" style={{fontSize:12}}/></button>
         </div>
       </div>
       <div style={{padding:"12px 16px",background:"#fff"}}>
@@ -283,7 +283,7 @@ function Summary({date,comp,stl,totTax,extras,prevK,curK,rebate,topL,onClose}){
           <span style={{fontSize:13,color:"#16a34a",fontWeight:600}}>Current Kitty</span>
           <span style={{fontSize:20,fontWeight:800,color:"#16a34a"}}>${f(curK)}</span>
         </div>
-        <div style={{textAlign:"center",marginTop:10,fontSize:11,color:"#94a3b8"}}>Screenshot & share to MPS 🃏</div>
+        <div style={{textAlign:"center",marginTop:10,fontSize:11,color:"#94a3b8"}}>Screenshot & share to MPS</div>
       </div>
     </div>
   );
@@ -388,11 +388,11 @@ function Leaderboard({history,onClose}){
   return(
     <div style={{...card,marginBottom:12}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-        <span style={{fontSize:15,fontWeight:700}}>🏆 Leaderboard</span>
+        <span style={{fontSize:15,fontWeight:700}}><i className="ti ti-trophy" style={{fontSize:15,marginRight:5,color:"#fbbf24"}}/>Leaderboard</span>
         <button onClick={onClose} style={{fontSize:13,padding:"3px 10px",borderRadius:8,border:"0.5px solid var(--color-border-tertiary)",background:"var(--color-background-secondary)",cursor:"pointer"}}>Close</button>
       </div>
       <div style={{marginBottom:8}}>
-        <input value={filterPlayer} onChange={e=>setFilterPlayer(e.target.value)} placeholder="🔍 Filter player..." style={{width:"100%",fontSize:11,padding:"5px 8px",borderRadius:7,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#1e293b",marginBottom:6,boxSizing:"border-box"}}/>
+        <input value={filterPlayer} onChange={e=>setFilterPlayer(e.target.value)} placeholder="Filter player..." style={{width:"100%",fontSize:11,padding:"5px 8px",borderRadius:7,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#1e293b",marginBottom:6,boxSizing:"border-box"}}/>
         <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
           <span style={{fontSize:9,color:"#94a3b8",alignSelf:"center"}}>Sort:</span>
           {[["net-desc","Net ↓"],["net-asc","Net ↑"],["win-desc","Win ↓"],["loss-asc","Loss ↑"],["sess-desc","Sessions ↓"]].map(([v,l])=>(
@@ -408,11 +408,11 @@ function Leaderboard({history,onClose}){
         <div style={{fontSize:9,fontWeight:700,color:"#94a3b8",textAlign:"right"}}>NET</div>
       </div>
       <div style={{background:"#1a3a6e",borderRadius:7,padding:"4px 8px",marginBottom:6,marginTop:4}}>
-        <span style={{fontSize:10,fontWeight:700,color:"#93c5fd",letterSpacing:".06em"}}>📊 OVERALL ALL-TIME</span>
+        <span style={{fontSize:10,fontWeight:700,color:"#93c5fd",letterSpacing:".06em"}}><i className="ti ti-chart-bar" style={{fontSize:11,marginRight:3,verticalAlign:-1}}/>OVERALL ALL-TIME</span>
       </div>
       {allStats.map((p,i)=><StatRow key={p.name} p={p} i={i}/>)}
       <div style={{background:"#1a3a6e",borderRadius:7,padding:"4px 8px",marginBottom:6,marginTop:10}}>
-        <span style={{fontSize:10,fontWeight:700,color:"#93c5fd",letterSpacing:".06em"}}>📅 MONTHLY</span>
+        <span style={{fontSize:10,fontWeight:700,color:"#93c5fd",letterSpacing:".06em"}}><i className="ti ti-calendar" style={{fontSize:11,marginRight:3,verticalAlign:-1}}/>MONTHLY</span>
       </div>
       <div style={{display:"flex",gap:5,marginBottom:8,overflowX:"auto",paddingBottom:3}}>
         {months.map(m=>{const[y,mo]=m.split("-");return(
@@ -500,7 +500,7 @@ function YTD({history,onClose}){
   return(
     <div style={{...card,marginBottom:12}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-        <span style={{fontSize:15,fontWeight:700}}>📊 YTD {yearFilter}</span>
+        <span style={{fontSize:15,fontWeight:700}}><i className="ti ti-chart-bar" style={{fontSize:15,marginRight:5,color:"#4ade80"}}/>YTD {yearFilter}</span>
         <button onClick={onClose} style={{fontSize:13,padding:"3px 10px",borderRadius:8,border:"0.5px solid var(--color-border-tertiary)",background:"var(--color-background-secondary)",cursor:"pointer"}}>Close</button>
       </div>
       <div style={{marginBottom:10}}>
@@ -509,7 +509,7 @@ function YTD({history,onClose}){
             <button key={y} onClick={()=>setYearFilter(y)} style={{flexShrink:0,fontSize:11,padding:"3px 10px",borderRadius:7,border:"none",fontWeight:yearFilter===y?700:400,background:yearFilter===y?"#1a3a6e":"#e2e8f0",color:yearFilter===y?"#fff":"#64748b",cursor:"pointer"}}>{y}</button>
           ))}
         </div>
-        <input value={filterYTD} onChange={e=>setFilterYTD(e.target.value)} placeholder="🔍 Filter player..." style={{width:"100%",fontSize:11,padding:"5px 8px",borderRadius:7,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#1e293b",marginBottom:6,boxSizing:"border-box"}}/>
+        <input value={filterYTD} onChange={e=>setFilterYTD(e.target.value)} placeholder="Filter player..." style={{width:"100%",fontSize:11,padding:"5px 8px",borderRadius:7,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#1e293b",marginBottom:6,boxSizing:"border-box"}}/>
         <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
           <span style={{fontSize:9,color:"#94a3b8",alignSelf:"center"}}>Sort:</span>
           {[["net-desc","Net ↓"],["net-asc","Net ↑"],["win-desc","Win ↓"],["loss-asc","Loss ↑"],["att-desc","Att ↓"],["name-asc","Name"]].map(([v,l])=>(
@@ -641,7 +641,7 @@ function Hist({history,onClose}){
         <button onClick={()=>h?setSel(null):onClose()} style={{fontSize:13,padding:"3px 10px",borderRadius:8,border:"0.5px solid var(--color-border-tertiary)",background:"var(--color-background-secondary)",cursor:"pointer"}}>{h?"← Back":"Close"}</button>
       </div>
       {!h&&<>
-        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search date or player..." style={{width:"100%",fontSize:12,padding:"6px 10px",borderRadius:8,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#1e293b",marginBottom:8,boxSizing:"border-box"}}/>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search date or player..." style={{width:"100%",fontSize:12,padding:"6px 10px",borderRadius:8,border:"1px solid #e2e8f0",background:"#f8fafc",color:"#1e293b",marginBottom:8,boxSizing:"border-box"}}/>
         <div style={{display:"flex",gap:5,overflowX:"auto",paddingBottom:4,marginBottom:6}}>
           {selBtn("all",filterMonth,setFilterMonth,"All")}
           {months.map(m=>{const[y,mo]=m.split("-");return selBtn(m,filterMonth,setFilterMonth,MON[+mo-1]+" "+y.slice(2));})}
@@ -967,7 +967,7 @@ export default function App(){
   );
 
   return(
-    <div style={{padding:10,fontFamily:"system-ui,sans-serif",background:"#f1f5f9",minHeight:"100vh",maxWidth:520,margin:"0 auto"}}>
+    <div style={{padding:10,fontFamily:"'Inter',system-ui,sans-serif","--font-head":"'Outfit',sans-serif","--font-mono":"'JetBrains Mono',monospace",background:"#f1f5f9",minHeight:"100vh",maxWidth:520,margin:"0 auto"}}>
 
       {/* Header */}
       <div style={{background:"#1a1a2e",borderRadius:14,padding:"10px 14px",marginBottom:8}}>
@@ -975,21 +975,21 @@ export default function App(){
           {/* Logo on the far left */}
           <RRLogo size={48}/>
           <div style={{flex:1}}>
-            <div style={{fontSize:15,fontWeight:700,color:"#fff"}}>RiverRat Masters</div>
+            <div style={{fontSize:16,fontWeight:700,fontFamily:"var(--font-head)",letterSpacing:".01em",color:"#fff"}}>RiverRat Masters</div>
             <Cal date={date} setDate={setDate} history={history} sessionDates={sessionDates} onViewSession={(d)=>{setCalHistSel(d);setView("game");}}/>
           </div>
           {/* Playing count + LIVE indicator */}
           <div style={{textAlign:"center"}}>
             <div style={{fontSize:10,color:"#94a3b8"}}>playing</div>
-            <div style={{fontSize:20,fontWeight:800,color:"#4ade80"}}>{sess.length}</div>
+            <div style={{fontSize:20,fontWeight:800,fontFamily:"var(--font-mono)",color:"#4ade80"}}>{sess.length}</div>
             <div style={{fontSize:8,color:"#4ade80",opacity:0.7}}>● LIVE</div>
           </div>
         </div>
         <div style={{display:"flex",background:"rgba(255,255,255,.08)",borderRadius:10,padding:3,gap:2}}>
-          {navBtn("game","🃏 Game")}
-          {navBtn("hist","📋 History")}
-          {navBtn("board","🏆 Board")}
-          {navBtn("ytd","📊 YTD")}
+          {navBtn("game",<><i className="ti ti-cards" style={{fontSize:13,marginRight:3}}/>Game</>)}
+          {navBtn("hist",<><i className="ti ti-history" style={{fontSize:13,marginRight:3}}/>History</>)}
+          {navBtn("board",<><i className="ti ti-trophy" style={{fontSize:13,marginRight:3}}/>Board</>)}
+          {navBtn("ytd",<><i className="ti ti-chart-bar" style={{fontSize:13,marginRight:3}}/>YTD</>)}
         </div>
       </div>
 
@@ -1003,10 +1003,10 @@ export default function App(){
           <div style={{...card,border:"2px solid #facc15",marginBottom:12}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
               <div>
-                <div style={{fontSize:15,fontWeight:700}}>📅 {lbl(h.date)}</div>
+                <div style={{fontSize:15,fontWeight:700}}><i className="ti ti-calendar-event" style={{fontSize:14,marginRight:5,color:"#facc15"}}/>{lbl(h.date)}</div>
                 <div style={{fontSize:12,color:"#64748b"}}>{(h.players||[]).length} players · kitty ${f(h.kittyEnd)} · <span style={{color:netContrib>=0?"#1a7a3e":"#a32d2d",fontWeight:600}}>{netContrib>=0?"+":"-"}${f(Math.abs(netContrib))} net</span></div>
               </div>
-              <button onClick={()=>setCalHistSel(null)} style={{fontSize:13,padding:"3px 10px",borderRadius:8,border:"0.5px solid #e2e8f0",background:"#f8fafc",cursor:"pointer"}}>✕</button>
+              <button onClick={()=>setCalHistSel(null)} style={{fontSize:13,padding:"3px 10px",borderRadius:8,border:"0.5px solid #e2e8f0",background:"#f8fafc",cursor:"pointer"}}><i className="ti ti-x" style={{fontSize:12}}/></button>
             </div>
             <div style={{overflowX:"auto",marginBottom:8}}>
               <table style={{borderCollapse:"collapse",width:"100%",fontSize:11}}>
@@ -1050,11 +1050,11 @@ export default function App(){
       {view==="game"&&<>
         <div style={card}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-            <span style={{fontSize:15,fontWeight:700}}>🃏 Players</span>
+            <span style={{fontSize:15,fontWeight:700}}><i className="ti ti-cards" style={{fontSize:15,marginRight:5,color:"#007aff"}}/>Players</span>
             <div style={{display:"flex",alignItems:"center",gap:6}}>
               <input ref={fileInputRef} type="file" accept="image/*" onChange={onScanFile} style={{display:"none"}}/>
               <button onClick={()=>fileInputRef.current?.click()} disabled={scanning} style={{fontSize:11,padding:"6px 9px",borderRadius:8,border:"1px solid #e2e8f0",background:scanning?"#f1f5f9":"#fff",cursor:scanning?"default":"pointer",fontWeight:700,color:"#185fa5",display:"flex",alignItems:"center",gap:4}}>
-                {scanning?"⏳ Scanning...":"📸 Scan"}
+                {scanning?(<><i className="ti ti-loader-2" style={{fontSize:13,marginRight:3}}/>Scanning...</>):(<><i className="ti ti-camera" style={{fontSize:13,marginRight:3}}/>Scan</>)}
               </button>
               <div style={{display:"flex",background:"#e2e8f0",borderRadius:8,padding:2,gap:1}}>
                 {[["players","All"],["session","Session"]].map(([v,l])=>(
@@ -1063,7 +1063,7 @@ export default function App(){
               </div>
             </div>
           </div>
-          {scanErr&&<div style={{fontSize:11,color:"#dc2626",marginBottom:8,background:"#fef2f2",borderRadius:6,padding:"5px 8px"}}>⚠️ {scanErr}</div>}
+          {scanErr&&<div style={{fontSize:11,color:"#dc2626",marginBottom:8,background:"#fef2f2",borderRadius:6,padding:"5px 8px"}}><i className="ti ti-alert-triangle" style={{fontSize:12,marginRight:4,verticalAlign:-1}}/>{scanErr}</div>}
 
           {playerTab==="players"&&<>
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:8}}>
@@ -1134,7 +1134,7 @@ export default function App(){
                           <td style={{padding:"6px 8px",textAlign:"right",fontWeight:700,color:w>0?"#1a7a3e":w<0?"#a32d2d":"#94a3b8"}}>{w===0?"—":(w>0?"+":"")+f(w)}</td>
                           <td style={{padding:"6px 8px",textAlign:"right",color:"#ba7517"}}>{tx>0?f(tx):""}</td>
                           <td style={{padding:"6px 8px",textAlign:"right",fontWeight:800,color:pNet>0?"#1a7a3e":pNet<0?"#a32d2d":"#94a3b8"}}>{pNet===0?"—":(pNet>0?"+":"")+f(pNet)}</td>
-                          <td style={{padding:"6px 8px",textAlign:"center"}}><button onClick={()=>tog(p.name)} style={{fontSize:10,padding:"2px 6px",borderRadius:5,border:"1px solid #fca5a5",background:"#fef2f2",color:"#dc2626",cursor:"pointer"}}>✕</button></td>
+                          <td style={{padding:"6px 8px",textAlign:"center"}}><button onClick={()=>tog(p.name)} style={{fontSize:10,padding:"2px 6px",borderRadius:5,border:"1px solid #fca5a5",background:"#fef2f2",color:"#dc2626",cursor:"pointer"}}><i className="ti ti-x" style={{fontSize:12}}/></button></td>
                         </tr>);
                       })}</tbody>
                     </table>
@@ -1169,7 +1169,7 @@ export default function App(){
         </div>
 
         <div style={card}>
-          <div style={{fontSize:15,fontWeight:700,marginBottom:10}}>💸 Settlement</div>
+          <div style={{fontSize:15,fontWeight:700,marginBottom:10}}><i className="ti ti-cash" style={{fontSize:15,marginRight:5,color:"#4ade80"}}/>Settlement</div>
           {stl.length===0?<div style={{textAlign:"center",padding:"10px 0",color:"#94a3b8",fontSize:14}}>{sess.length===0?"Add players above":"All balanced"}</div>:stl.map((t,i)=><SRow key={i} t={t}/>)}
 
           {/* Tally boxes */}
@@ -1230,7 +1230,7 @@ export default function App(){
             <input value={e.label} onChange={ev=>setExtras(es=>es.map(x=>x.id===e.id?{...x,label:ev.target.value}:x))} style={{fontSize:13,flex:1,border:"none",background:"transparent",color:"#1e293b"}}/>
             <span style={{fontSize:12,color:"#94a3b8"}}>$</span>
             <input type="number" value={e.amount} onChange={ev=>setExtras(es=>es.map(x=>x.id===e.id?{...x,amount:Number(ev.target.value)}:x))} style={{fontSize:13,width:65,textAlign:"right",border:"none",background:"transparent",color:"#1e293b",fontWeight:600}}/>
-            <button onClick={()=>setExtras(es=>es.filter(x=>x.id!==e.id))} style={{fontSize:13,color:"#94a3b8",border:"none",background:"none",cursor:"pointer"}}>✕</button>
+            <button onClick={()=>setExtras(es=>es.filter(x=>x.id!==e.id))} style={{fontSize:13,color:"#94a3b8",border:"none",background:"none",cursor:"pointer"}}><i className="ti ti-x" style={{fontSize:12}}/></button>
           </div>)}
           <div style={{display:"flex",gap:6}}>
             <input value={newLabel} onChange={e=>setNewLabel(e.target.value)} placeholder="Expense item" style={{fontSize:13,padding:"5px 9px",flex:1,borderRadius:8,border:"1px solid #e2e8f0",background:"#fff",color:"#1e293b"}}/>
@@ -1240,7 +1240,7 @@ export default function App(){
         </div>
 
         <div style={{display:"flex",gap:8,marginBottom:24}}>
-          <button onClick={save} disabled={saving} style={{flex:1,fontSize:15,fontWeight:700,padding:13,borderRadius:12,border:"none",background:saving?"#94a3b8":"#1a7a3e",color:"#fff",cursor:"pointer"}}>{saving?"Saving...":"💾 Save + Summary"}</button>
+          <button onClick={save} disabled={saving} style={{flex:1,fontSize:15,fontWeight:700,padding:13,borderRadius:12,border:"none",background:saving?"#94a3b8":"#1a7a3e",color:"#fff",cursor:"pointer"}}>{saving?"Saving...":(<><i className="ti ti-device-floppy" style={{fontSize:14,marginRight:4,verticalAlign:-2}}/>Save + Summary</>)}</button>
         </div>
       </>}
     </div>
