@@ -22,7 +22,11 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Server missing ANTHROPIC_API_KEY" });
   }
 
+  const todayISO = new Date().toISOString().split("T")[0];
+
   const prompt = `You are reading a poker session scoresheet screenshot for the "RiverRat Masters" (MPS) group.
+Today's actual date is ${todayISO}. Use this as your only source of truth for the current year —
+never guess a year from your own training knowledge.
 
 Known player initials that may appear: ${KNOWN_NAMES.join(", ")}. The sheet may also include
 other/guest initials not in this list — include those too, using whatever initials are shown.
@@ -45,7 +49,10 @@ Rules:
 - Do not compute winnings, tax, rebate, or settlement yourself — the app derives those.
 - For "extras", include every row from the expenses/amount+description table on the sheet,
   using its Amount as "amount" and its Description text as "label" (e.g. "Dinner (SY)").
-- If the date isn't legible, omit the "date" field entirely rather than guessing.
+- For "date": if the sheet shows a day and month but no year (e.g. "8 Aug"), use the year from
+  today's date above — unless that would place the date more than 60 days in the future, in which
+  case use the previous year instead. If the day/month itself isn't legible, omit "date" entirely
+  rather than guessing.
 - Respond with raw JSON only.`;
 
   try {
