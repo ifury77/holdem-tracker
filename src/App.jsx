@@ -960,6 +960,14 @@ export default function App(){
     setDoc(_liveRef,{date:nd,players:freshPlayers,extras:[],_source:_deviceId,_ts:Date.now()}).catch(()=>{});
   };
 
+  const endSession=()=>{
+    if(!window.confirm("End this session? This clears the in-progress players and buy-ins without saving anything to history."))return;
+    const freshPlayers=NAMES.map(n=>({name:n,inSession:false,rebuys:0,finalChips:""}));
+    setPlayers(freshPlayers);
+    setExtras([]);setShowSum(false);setDate(td);
+    setDoc(_liveRef,{date:td,players:freshPlayers,extras:[],showSum:false,_source:_deviceId,_ts:Date.now()}).catch(()=>{});
+  };
+
   const navBtn=(v,label)=>(
     <button onClick={()=>setView(v)} style={{flex:1,fontSize:11,padding:"5px 4px",borderRadius:8,border:"none",
       fontWeight:view===v?700:400,background:view===v?"#185fa5":"transparent",
@@ -983,6 +991,7 @@ export default function App(){
             <div style={{fontSize:10,color:"#94a3b8"}}>playing</div>
             <div style={{fontSize:20,fontWeight:800,fontFamily:"var(--font-mono)",color:"#4ade80"}}>{sess.length}</div>
             <div style={{fontSize:8,color:"#4ade80",opacity:0.7}}>● LIVE</div>
+            {sess.length>0&&<button onClick={endSession} style={{marginTop:4,fontSize:9,padding:"2px 6px",borderRadius:6,border:"1px solid rgba(255,255,255,.15)",background:"rgba(255,255,255,.05)",color:"#94a3b8",cursor:"pointer"}}><i className="ti ti-player-stop" style={{fontSize:10,marginRight:2,verticalAlign:-1}}/>End</button>}
           </div>
         </div>
         <div style={{display:"flex",background:"rgba(255,255,255,.08)",borderRadius:10,padding:3,gap:2}}>
