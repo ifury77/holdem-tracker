@@ -360,7 +360,7 @@ function Leaderboard({history,onClose}){
   const StatRow=({p,i})=>{
     const isPos=p.totalNet>=0;
     return(
-      <div style={{display:"grid",gridTemplateColumns:"22px 28px 1fr 64px 64px 70px",gap:3,alignItems:"center",
+      <div style={{display:"grid",gridTemplateColumns:"20px 26px 1fr minmax(58px,max-content) minmax(58px,max-content) minmax(64px,max-content)",gap:3,alignItems:"center",
         padding:"6px 8px",borderRadius:9,marginBottom:4,
         background:i===0?"#0d2818":i===1?"#1a1a2e":i===2?"#1a1800":"#f8fafc",
         border:`1px solid ${i===0?"#14532d":i===1?"#1e293b":i===2?"#713f12":"#e2e8f0"}`}}>
