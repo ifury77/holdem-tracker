@@ -200,7 +200,7 @@ function Summary({date,comp,stl,totTax,extras,prevK,curK,rebate,topL,onClose}){
             <div style={{fontSize:20,fontWeight:800,color:"#fff"}}>♠ {lbl(date)}</div>
             <div style={{fontSize:12,color:"#4ade80"}}>{comp.length} players · ${f(pool)} pool</div>
           </div>
-          <button onClick={onClose} style={{background:"rgba(255,255,255,.08)",border:"none",color:"#94a3b8",fontSize:13,padding:"4px 9px",borderRadius:7,cursor:"pointer"}}><i className="ti ti-x" style={{fontSize:12}}/></button>
+          <button onClick={onClose} style={{background:"rgba(255,255,255,.12)",border:"none",color:"#fff",fontSize:18,lineHeight:1,width:28,height:28,borderRadius:8,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
         </div>
       </div>
       <div style={{padding:"12px 16px",background:"#fff"}}>
@@ -1015,7 +1015,7 @@ export default function App(){
                 <div style={{fontSize:15,fontWeight:700}}><i className="ti ti-calendar-event" style={{fontSize:14,marginRight:5,color:"#facc15"}}/>{lbl(h.date)}</div>
                 <div style={{fontSize:12,color:"#64748b"}}>{(h.players||[]).length} players · kitty ${f(h.kittyEnd)} · <span style={{color:netContrib>=0?"#1a7a3e":"#a32d2d",fontWeight:600}}>{netContrib>=0?"+":"-"}${f(Math.abs(netContrib))} net</span></div>
               </div>
-              <button onClick={()=>setCalHistSel(null)} style={{fontSize:13,padding:"3px 10px",borderRadius:8,border:"0.5px solid #e2e8f0",background:"#f8fafc",cursor:"pointer"}}><i className="ti ti-x" style={{fontSize:12}}/></button>
+              <button onClick={()=>setCalHistSel(null)} style={{fontSize:15,lineHeight:1,padding:"3px 10px",borderRadius:8,border:"0.5px solid #e2e8f0",background:"#f8fafc",cursor:"pointer"}}>×</button>
             </div>
             <div style={{overflowX:"auto",marginBottom:8}}>
               <table style={{borderCollapse:"collapse",width:"100%",fontSize:11}}>
@@ -1143,7 +1143,7 @@ export default function App(){
                           <td style={{padding:"6px 8px",textAlign:"right",fontWeight:700,color:w>0?"#1a7a3e":w<0?"#a32d2d":"#94a3b8"}}>{w===0?"—":(w>0?"+":"")+f(w)}</td>
                           <td style={{padding:"6px 8px",textAlign:"right",color:"#ba7517"}}>{tx>0?f(tx):""}</td>
                           <td style={{padding:"6px 8px",textAlign:"right",fontWeight:800,color:pNet>0?"#1a7a3e":pNet<0?"#a32d2d":"#94a3b8"}}>{pNet===0?"—":(pNet>0?"+":"")+f(pNet)}</td>
-                          <td style={{padding:"6px 8px",textAlign:"center"}}><button onClick={()=>tog(p.name)} style={{fontSize:10,padding:"2px 6px",borderRadius:5,border:"1px solid #fca5a5",background:"#fef2f2",color:"#dc2626",cursor:"pointer"}}><i className="ti ti-x" style={{fontSize:12}}/></button></td>
+                          <td style={{padding:"6px 8px",textAlign:"center"}}><button onClick={()=>tog(p.name)} style={{fontSize:12,lineHeight:1,padding:"2px 7px",borderRadius:5,border:"1px solid #fca5a5",background:"#fef2f2",color:"#dc2626",cursor:"pointer"}}>×</button></td>
                         </tr>);
                       })}</tbody>
                     </table>
@@ -1239,7 +1239,7 @@ export default function App(){
             <input value={e.label} onChange={ev=>setExtras(es=>es.map(x=>x.id===e.id?{...x,label:ev.target.value}:x))} style={{fontSize:13,flex:1,border:"none",background:"transparent",color:"#1e293b"}}/>
             <span style={{fontSize:12,color:"#94a3b8"}}>$</span>
             <input type="number" value={e.amount} onChange={ev=>setExtras(es=>es.map(x=>x.id===e.id?{...x,amount:Number(ev.target.value)}:x))} style={{fontSize:13,width:65,textAlign:"right",border:"none",background:"transparent",color:"#1e293b",fontWeight:600}}/>
-            <button onClick={()=>setExtras(es=>es.filter(x=>x.id!==e.id))} style={{fontSize:13,color:"#94a3b8",border:"none",background:"none",cursor:"pointer"}}><i className="ti ti-x" style={{fontSize:12}}/></button>
+            <button onClick={()=>setExtras(es=>es.filter(x=>x.id!==e.id))} style={{fontSize:16,lineHeight:1,color:"#94a3b8",border:"none",background:"none",cursor:"pointer"}}>×</button>
           </div>)}
           <div style={{display:"flex",gap:6}}>
             <input value={newLabel} onChange={e=>setNewLabel(e.target.value)} placeholder="Expense item" style={{fontSize:13,padding:"5px 9px",flex:1,borderRadius:8,border:"1px solid #e2e8f0",background:"#fff",color:"#1e293b"}}/>
