@@ -494,8 +494,9 @@ function YTD({history,onClose}){
   const ytdPlayers=useMemo(()=>{
     // Start with fixed order, only include players who appeared this year
     const appeared=new Set(sessions.flatMap(s=>(s.players||[]).map(p=>p.name)));
-    return PLAYER_ORDER.filter(n=>appeared.has(n));
-  },[sessions]);
+    const inOrder=PLAYER_ORDER.filter(n=>appeared.has(n));
+    return filterYTD?inOrder.filter(n=>n.toLowerCase().includes(filterYTD.toLowerCase())):inOrder;
+  },[sessions,filterYTD]);
 
   return(
     <div style={{...card,marginBottom:12}}>
@@ -547,9 +548,9 @@ function YTD({history,onClose}){
           </table>
         </div>
         <div style={{fontSize:10,fontWeight:700,color:"#475569",letterSpacing:".08em",marginBottom:8,marginTop:4}}>SESSION RESULTS (Net after tax & rebate)</div>
-        <div style={{overflowX:"auto"}}>
+        <div style={{overflow:"auto",maxHeight:420,border:"1px solid #e2e8f0",borderRadius:8}}>
           <table style={{borderCollapse:"collapse",fontSize:10,minWidth:"100%"}}>
-            <thead>
+            <thead style={{position:"sticky",top:0,zIndex:5}}>
               <tr style={{background:"#0f172a"}}>
                 <th style={{padding:"5px 6px",textAlign:"left",color:"#64748b",fontWeight:700,whiteSpace:"nowrap",position:"sticky",left:0,background:"#0f172a",minWidth:60}}>Date</th>
                 {ytdPlayers.map(n=><th key={n} style={{padding:"5px 5px",textAlign:"right",color:"#94a3b8",fontWeight:700,minWidth:52}}>{n}</th>)}
