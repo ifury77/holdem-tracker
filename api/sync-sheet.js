@@ -108,7 +108,7 @@ export default async function handler(req, res) {
   try {
     const token = await getAccessToken();
 
-    // 1. List tabs, pick the rightmost (most recently added)
+    // 1. List tabs (in sheet order)
     const metaResp = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?fields=sheets.properties`,
       { headers: { Authorization: `Bearer ${token}` } }
@@ -118,18 +118,29 @@ export default async function handler(req, res) {
 
     const sheets = (meta.sheets || []).map(s => s.properties).sort((a,b)=>a.index-b.index);
     if (!sheets.length) return res.status(502).json({ error: "No tabs found in spreadsheet" });
-    const latest = sheets[sheets.length - 1];
-    const tabTitle = latest.title;
 
-    // 2. Fetch a generous range of that tab
-    const range = `'${tabTitle}'!A1:AD60`;
-    const valuesResp = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(range)}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    const valuesData = await valuesResp.json();
-    if (!valuesResp.ok) return res.status(502).json({ error: valuesData.error?.message || "Failed to read tab values" });
-    const rows = valuesData.values || [];
+    // 2. Scan backward from the last tab, skip the trailing aggregate sheet (no "Players" header),
+    //    and use the first date-tab that actually has real data (a Buy-In > 0 for someone) —
+    //    later tabs are often pre-made empty templates for future dates.
+    let tabTitle = null, rows = null;
+    for (let i = sheets.length - 1; i >= 0; i--) {
+      const candidate = sheets[i].title;
+      const range = `'${candidate}'!A1:AD60`;
+      const valuesResp = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(range)}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const valuesData = await valuesResp.json();
+      if (!valuesResp.ok) continue;
+      const candidateRows = valuesData.values || [];
+      const hIdx = findHeaderRow(candidateRows, ["Players", "Buy-In ($)"]);
+      if (hIdx < 0) continue; // not a date-session tab (e.g. the trailing YTD/attendance sheet)
+      const header = candidateRows[hIdx];
+      const buyInCol = colIndex(header, "Buy-In ($)");
+      const hasData = candidateRows.slice(hIdx + 1).some(r => parseNum(r[buyInCol]) > 0);
+      if (hasData) { tabTitle = candidate; rows = candidateRows; break; }
+    }
+    if (!tabTitle) return res.status(502).json({ error: "No tab with active session data found" });
 
     // 3. Find the player table header row (has "Players", "Buy-In ($)", "Final Chips ($)")
     const headerIdx = findHeaderRow(rows, ["Players", "Buy-In ($)", "Final Chips ($)"]);
