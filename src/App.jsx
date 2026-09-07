@@ -787,6 +787,8 @@ export default function App(){
   const[loading,setLoading]=useState(true);
   const[scanning,setScanning]=useState(false);
   const[scanErr,setScanErr]=useState("");
+  const[sheetSyncOn,setSheetSyncOn]=useState(true);
+  const[sheetSyncErr,setSheetSyncErr]=useState("");
   const fileInputRef=React.useRef(null);
 
   useEffect(()=>{
@@ -872,6 +874,39 @@ export default function App(){
   const setF=(n,v)=>setPlayers(ps=>ps.map(p=>p.name===n?{...p,finalChips:v}:p));
   const addG=()=>{const n=newName.trim().toUpperCase();if(!n||players.find(p=>p.name===n))return;setPlayers(ps=>[...ps,{name:n,inSession:true,rebuys:1,finalChips:""}]);setNewName("");};
 
+  // Auto-sync from the private Google Sheet every 15s while on the Game tab
+  useEffect(()=>{
+    if(view!=="game"||!sheetSyncOn) return;
+    let cancelled=false;
+    const poll=async()=>{
+      try{
+        const resp=await fetch("/api/sync-sheet");
+        const result=await resp.json();
+        if(!resp.ok) throw new Error(result.error||"Sync failed");
+        if(cancelled) return;
+        setPlayers(ps=>{
+          const next=ps.map(p=>({...p}));
+          (result.players||[]).forEach(rp=>{
+            const name=(rp.name||"").trim().toUpperCase();
+            if(!name) return;
+            const idx=next.findIndex(p=>p.name===name);
+            const vals={inSession:true,rebuys:Number(rp.rebuys)||1,finalChips:rp.finalChips!==undefined&&rp.finalChips!==null?String(rp.finalChips):""};
+            if(idx>=0) next[idx]={...next[idx],...vals};
+            else next.push({name,...vals});
+          });
+          return next;
+        });
+        if(Array.isArray(result.extras)) setExtras(result.extras.map(ex=>({label:ex.label||"",amount:Number(ex.amount)||0})));
+        setSheetSyncErr("");
+      }catch(err){
+        if(!cancelled) setSheetSyncErr(err.message||"Sync failed");
+      }
+    };
+    poll();
+    const id=setInterval(poll,15000);
+    return()=>{cancelled=true;clearInterval(id);};
+  },[view,sheetSyncOn]);
+
   const onScanFile=async(e)=>{
     const file=e.target.files?.[0];
     if(!file) return;
@@ -908,7 +943,7 @@ export default function App(){
       });
 
       if(Array.isArray(result.extras)&&result.extras.length){
-        setExtras(prev=>[...prev,...result.extras.map(ex=>({label:ex.label||"",amount:Number(ex.amount)||0}))]);
+        setExtras(result.extras.map(ex=>({label:ex.label||"",amount:Number(ex.amount)||0})));
       }
       if(result.date) setDate(result.date);
 
@@ -1066,6 +1101,9 @@ export default function App(){
               <button onClick={()=>fileInputRef.current?.click()} disabled={scanning} style={{fontSize:11,padding:"6px 9px",borderRadius:8,border:"1px solid #e2e8f0",background:scanning?"#f1f5f9":"#fff",cursor:scanning?"default":"pointer",fontWeight:700,color:"#185fa5",display:"flex",alignItems:"center",gap:4}}>
                 {scanning?(<><i className="ti ti-loader-2" style={{fontSize:13,marginRight:3}}/>Scanning...</>):(<><i className="ti ti-camera" style={{fontSize:13,marginRight:3}}/>Scan</>)}
               </button>
+              <button onClick={()=>setSheetSyncOn(v=>!v)} title="Auto-sync from Google Sheet" style={{fontSize:11,padding:"6px 8px",borderRadius:8,border:"1px solid "+(sheetSyncOn?"#bbf7d0":"#e2e8f0"),background:sheetSyncOn?"#f0fdf4":"#fff",cursor:"pointer",fontWeight:700,color:sheetSyncOn?"#1a7a3e":"#94a3b8",display:"flex",alignItems:"center",gap:4}}>
+                <i className={sheetSyncOn?"ti ti-refresh":"ti ti-refresh-off"} style={{fontSize:13}}/>{sheetSyncOn?"Live":"Off"}
+              </button>
               <div style={{display:"flex",background:"#e2e8f0",borderRadius:8,padding:2,gap:1}}>
                 {[["players","All"],["session","Session"]].map(([v,l])=>(
                   <button key={v} onClick={()=>setPlayerTab(v)} style={{fontSize:12,padding:"4px 10px",borderRadius:6,fontWeight:playerTab===v?700:400,background:playerTab===v?"#fff":"transparent",border:"none",cursor:"pointer",color:playerTab===v?"#1e293b":"#64748b"}}>{l}{v==="session"&&sess.length>0?` (${sess.length})`:""}</button>
@@ -1074,6 +1112,7 @@ export default function App(){
             </div>
           </div>
           {scanErr&&<div style={{fontSize:11,color:"#dc2626",marginBottom:8,background:"#fef2f2",borderRadius:6,padding:"5px 8px"}}><i className="ti ti-alert-triangle" style={{fontSize:12,marginRight:4,verticalAlign:-1}}/>{scanErr}</div>}
+          {sheetSyncErr&&sheetSyncOn&&<div style={{fontSize:11,color:"#b45309",marginBottom:8,background:"#fffbeb",borderRadius:6,padding:"5px 8px"}}><i className="ti ti-alert-triangle" style={{fontSize:12,marginRight:4,verticalAlign:-1}}/>Sheet sync: {sheetSyncErr}</div>}
 
           {playerTab==="players"&&<>
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:8}}>
