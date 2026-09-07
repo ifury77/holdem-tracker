@@ -51,7 +51,16 @@ async function getAccessToken() {
     signature = crypto.sign("RSA-SHA256", Buffer.from(unsigned), keyObject)
       .toString("base64").replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
   } catch (e) {
-    throw new Error("Could not parse GOOGLE_SA_KEY as a private key: " + e.message);
+    const lines = key.split("\n");
+    const diag = {
+      totalLength: key.length,
+      lineCount: lines.length,
+      firstLine: lines[0],
+      lastNonEmptyLine: [...lines].reverse().find(l=>l.trim())||"",
+      startsCorrectly: key.startsWith("-----BEGIN PRIVATE KEY-----"),
+      endsCorrectly: key.trim().endsWith("-----END PRIVATE KEY-----")
+    };
+    throw new Error("Could not parse GOOGLE_SA_KEY: " + e.message + " | diag: " + JSON.stringify(diag));
   }
   const jwt = unsigned + "." + signature;
 
