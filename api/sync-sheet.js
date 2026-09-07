@@ -20,8 +20,20 @@ function base64url(input) {
 
 async function getAccessToken() {
   const email = process.env.GOOGLE_SA_EMAIL;
-  const key = (process.env.GOOGLE_SA_KEY || "").replace(/\\n/g, "\n");
+  let key = process.env.GOOGLE_SA_KEY || "";
   if (!email || !key) throw new Error("Missing GOOGLE_SA_EMAIL or GOOGLE_SA_KEY");
+
+  // Defensively normalize the key: strip accidental wrapping quotes, convert
+  // literal \n escapes and CRLF to real newlines, ensure a trailing newline.
+  key = key.trim();
+  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
+    key = key.slice(1, -1);
+  }
+  key = key.replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n").replace(/\r\n/g, "\n");
+  if (!key.endsWith("\n")) key += "\n";
+  if (!key.includes("BEGIN PRIVATE KEY") && !key.includes("BEGIN RSA PRIVATE KEY")) {
+    throw new Error("GOOGLE_SA_KEY doesn't look like a valid PEM private key (missing BEGIN header) — re-check it was copied in full");
+  }
 
   const now = Math.floor(Date.now() / 1000);
   const header = { alg: "RS256", typ: "JWT" };
