@@ -45,9 +45,14 @@ async function getAccessToken() {
     exp: now + 3600
   };
   const unsigned = base64url(JSON.stringify(header)) + "." + base64url(JSON.stringify(claims));
-  const signer = crypto.createSign("RSA-SHA256");
-  signer.update(unsigned);
-  const signature = signer.sign(key).toString("base64").replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+  let signature;
+  try {
+    const keyObject = crypto.createPrivateKey({ key, format: "pem" });
+    signature = crypto.sign("RSA-SHA256", Buffer.from(unsigned), keyObject)
+      .toString("base64").replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+  } catch (e) {
+    throw new Error("Could not parse GOOGLE_SA_KEY as a private key: " + e.message);
+  }
   const jwt = unsigned + "." + signature;
 
   const resp = await fetch("https://oauth2.googleapis.com/token", {
