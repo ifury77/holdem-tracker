@@ -97,6 +97,24 @@ function parseNum(v) {
   return isNaN(n) ? 0 : n;
 }
 
+const MONTHS = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11};
+
+function tabTitleToISODate(title) {
+  const m = title.trim().match(/^(\d{1,2})\s*([a-zA-Z]+)/);
+  if (!m) return null;
+  const day = parseInt(m[1], 10);
+  const monIdx = MONTHS[m[2].toLowerCase().slice(0,3)] ?? MONTHS[m[2].toLowerCase()];
+  if (monIdx === undefined || day < 1 || day > 31) return null;
+
+  const now = new Date();
+  let year = now.getFullYear();
+  const candidate = new Date(Date.UTC(year, monIdx, day));
+  const diffDays = (candidate - now) / 86400000;
+  if (diffDays > 60) year -= 1; // looks like it's actually last year's date
+  const iso = `${year}-${String(monIdx+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+  return iso;
+}
+
 export default async function handler(req, res) {
   if (req.method !== "GET" && req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -183,7 +201,7 @@ export default async function handler(req, res) {
       }
     }
 
-    return res.status(200).json({ tab: tabTitle, players, extras });
+    return res.status(200).json({ tab: tabTitle, date: tabTitleToISODate(tabTitle), players, extras });
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
