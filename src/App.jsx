@@ -897,6 +897,7 @@ export default function App(){
           return next;
         });
         if(Array.isArray(result.extras)) setExtras(result.extras.map(ex=>({label:ex.label||"",amount:Number(ex.amount)||0})));
+        if(result.date) setDate(result.date);
         setSheetSyncErr("");
       }catch(err){
         if(!cancelled) setSheetSyncErr(err.message||"Sync failed");
