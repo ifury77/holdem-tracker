@@ -15,6 +15,8 @@ const db = getFirestore(app);
 
 const BUY_IN=1000, TAX=0.2;
 const NAMES=["IO","PN","CW","BT","AK","DS","PK","SC","YS","SY","DT","JN","KC","JW","DH"];
+// Guests: never pay tax on winnings, and never eligible for the top-loser rebate
+const GUEST_NAMES=["JW"];
 const MON=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
 const f=n=>Math.round(n).toLocaleString();
 const fs=n=>n===0?"—":(n>0?"+$"+f(n):"-$"+f(Math.abs(n)));
@@ -958,7 +960,9 @@ export default function App(){
   };
 
   const comp=useMemo(()=>sess.map(p=>{
-    const buyIn=p.rebuys*BUY_IN,chips=Number(p.finalChips)||0,winnings=Math.round((chips-buyIn)/2),tax=winnings>0?Math.round(winnings*TAX):0;
+    const buyIn=p.rebuys*BUY_IN,chips=Number(p.finalChips)||0,winnings=Math.round((chips-buyIn)/2);
+    const isGuest=GUEST_NAMES.includes(p.name);
+    const tax=(winnings>0&&!isGuest)?Math.round(winnings*TAX):0;
     return{...p,buyIn,chips,winnings,tax,net:winnings-tax};
   }),[sess]);
 
@@ -967,7 +971,8 @@ export default function App(){
   const totTax=comp.reduce((s,p)=>s+p.tax,0);
   const tally=sess.length>0&&totW+totL===0;
   const totEx=extras.reduce((s,e)=>s+Number(e.amount||0),0);
-  const topL=comp.length?comp.reduce((a,b)=>a.winnings<b.winnings?a:b):null;
+  const rebateEligible=comp.filter(p=>!GUEST_NAMES.includes(p.name));
+  const topL=rebateEligible.length?rebateEligible.reduce((a,b)=>a.winnings<b.winnings?a:b):null;
   const rebate=topL&&topL.winnings<0?Math.round(Math.abs(topL.winnings)*.1):0;
   const curK=prevK+totTax-totEx-rebate;
   const stl=useMemo(()=>mkSettle(comp),[comp]);
