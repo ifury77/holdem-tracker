@@ -17,6 +17,14 @@ const BUY_IN=1000, TAX=0.2;
 const NAMES=["IO","PN","CW","BT","AK","DS","PK","SC","YS","SY","DT","JN","KC","JW","DH"];
 // Guests: never pay tax on winnings, and never eligible for the top-loser rebate
 const GUEST_NAMES=["JW"];
+// Safety net for Scan/Sheet-sync: strip any row that looks like a rebate line
+// (bare player name, or "<name> (Rebate)" / "Rebate (<name>)") before merging
+// into extras — the app computes and displays the rebate itself, so a parsed
+// row matching this pattern would double-count it.
+const stripRebateLikeExtras=(extras)=>extras.filter(ex=>{
+  const label=(ex.label||"").trim();
+  return !(NAMES.includes(label.toUpperCase())||/^[A-Za-z]+\s*\(rebate\)$/i.test(label)||/^rebate\s*\([A-Za-z]+\)$/i.test(label));
+});
 const MON=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
 const f=n=>Math.round(n).toLocaleString();
 const fs=n=>n===0?"—":(n>0?"+$"+f(n):"-$"+f(Math.abs(n)));
@@ -898,7 +906,7 @@ export default function App(){
           });
           return next;
         });
-        if(Array.isArray(result.extras)) setExtras(result.extras.map(ex=>({label:ex.label||"",amount:Number(ex.amount)||0})));
+        if(Array.isArray(result.extras)) setExtras(stripRebateLikeExtras(result.extras.map(ex=>({label:ex.label||"",amount:Number(ex.amount)||0}))));
         if(result.date) setDate(result.date);
         setSheetSyncErr("");
       }catch(err){
@@ -946,7 +954,7 @@ export default function App(){
       });
 
       if(Array.isArray(result.extras)&&result.extras.length){
-        setExtras(result.extras.map(ex=>({label:ex.label||"",amount:Number(ex.amount)||0})));
+        setExtras(stripRebateLikeExtras(result.extras.map(ex=>({label:ex.label||"",amount:Number(ex.amount)||0}))));
       }
       if(result.date) setDate(result.date);
 
@@ -1290,7 +1298,13 @@ export default function App(){
           <div style={{display:"flex",gap:6}}>
             <input value={newLabel} onChange={e=>setNewLabel(e.target.value)} placeholder="Expense item" style={{fontSize:13,padding:"5px 9px",flex:1,borderRadius:8,border:"1px solid #e2e8f0",background:"#fff",color:"#1e293b"}}/>
             <input type="number" value={newAmt} onChange={e=>setNewAmt(e.target.value)} placeholder="$" style={{fontSize:13,padding:"5px 8px",width:60,borderRadius:8,border:"1px solid #e2e8f0",background:"#fff",color:"#1e293b"}}/>
-            <button onClick={()=>{if(!newLabel.trim())return;setExtras(es=>[...es,{id:Date.now(),label:newLabel.trim(),amount:Number(newAmt)||0}]);setNewLabel("");setNewAmt("");}} style={{fontSize:13,padding:"5px 10px",borderRadius:8,border:"1px solid #e2e8f0",background:"#fff",cursor:"pointer",fontWeight:700}}>+ Add</button>
+            <button onClick={()=>{
+              const label=newLabel.trim();
+              if(!label)return;
+              const isRebateLike=NAMES.includes(label.toUpperCase())||/^[A-Za-z]+\s*\(rebate\)$/i.test(label)||/^rebate\s*\([A-Za-z]+\)$/i.test(label);
+              if(isRebateLike){alert("Rebate is computed automatically for the top loser — don't add it as a manual expense, or it'll be double-counted.");return;}
+              setExtras(es=>[...es,{id:Date.now(),label,amount:Number(newAmt)||0}]);setNewLabel("");setNewAmt("");
+            }} style={{fontSize:13,padding:"5px 10px",borderRadius:8,border:"1px solid #e2e8f0",background:"#fff",cursor:"pointer",fontWeight:700}}>+ Add</button>
           </div>
         </div>
 
