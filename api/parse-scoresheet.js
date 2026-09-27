@@ -48,7 +48,11 @@ Rules:
 - "finalChips" = the player's Final Chips value.
 - Do not compute winnings, tax, rebate, or settlement yourself — the app derives those.
 - For "extras", include every row from the expenses/amount+description table on the sheet,
-  using its Amount as "amount" and its Description text as "label" (e.g. "Dinner (SY)").
+  using its Amount as "amount" and its Description text as "label" (e.g. "Dinner (SY)") —
+  EXCEPT rows whose description is a bare player name (e.g. "JN") or matches the pattern
+  "<name> (Rebate)" / "Rebate (<name>)" (e.g. "IO (Rebate)", "Rebate (IO)"). Those are the
+  session's rebate line, which the app computes and displays automatically — never include
+  them in "extras", or the rebate will be double-counted.
 - For "date": if the sheet shows a day and month but no year (e.g. "8 Aug"), use the year from
   today's date above — unless that would place the date more than 60 days in the future, in which
   case use the previous year instead. If the day/month itself isn't legible, omit "date" entirely
